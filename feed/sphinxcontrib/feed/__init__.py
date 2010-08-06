@@ -1,4 +1,13 @@
-import nose.tools
+from fsdict import FSDict
+import feedgenerator
+from urllib import quote_plus
+import os.path
+
+#global
+feed_entries = None
+
+#constant unlikely to occur in a docname and legal as a filename
+MAGIC_SEPARATOR = '---###---'
 
 def setup(app):
     """
@@ -7,19 +16,80 @@ def setup(app):
     """
     from sphinx.application import Sphinx
     if not isinstance(app, Sphinx): return
-    app.add_config_value('feed_base_url', '', '')
-    app.add_config_value('feed_description', '', '')
+    app.add_config_value('feed_base_url', '', 'html')
+    app.add_config_value('feed_description', '', 'html')
     app.add_config_value('feed_filename', 'rss.xml', 'html')
     
     app.connect('html-page-context', create_feed_item)
     app.connect('build-finished', emit_feed)
     app.connect('builder-inited', create_feed_container)
+    app.connect('env-purge-doc', remove_dead_feed_item)
     
-    #env.process_metadata deletes most of the docinfo, and dates
-    #in particular.
-
 def create_feed_container(app):
-    import feedgenerator
+    """
+    create lazy filesystem stash for keeping RSS entry fragments, since we don't
+    want to store the entire site in the environment (in fact, even if we did,
+    it wasn't persisting for some reason.)
+    """
+    global feed_entries
+    rss_fragment_path = os.path.realpath(os.path.join(app.outdir, '..', 'rss_entry_fragments'))
+    feed_entries = FSDict(work_dir=rss_fragment_path)
+    # app.builder.env.feed_url = app.config.feed_base_url + \
+    #    app.config.feed_filename
+    
+def create_feed_item(app, pagename, templatename, ctx, doctree):
+    """
+    Here we have access to nice HTML fragments to use in, say, an RSS feed.
+    We serialize them to disk so that we get them preserved across builds.
+    """
+    global feed_entries
+    import dateutil.parser
+    date_parser = dateutil.parser.parser()
+    metadata = app.builder.env.metadata.get(pagename, {})
+    
+    if 'date' not in metadata:
+        return #don't index dateless articles
+    try:
+        pub_date = date_parser.parse(metadata['date'])
+    except ValueError, exc:
+        #probably a nonsensical date
+        app.builder.warn('date parse error: ' + str(exc) + ' in ' + pagename)
+        return
+        
+    # title, link, description, author_email=None,
+    #     author_name=None, author_link=None, pubdate=None, comments=None,
+    #     unique_id=None, enclosure=None, categories=(), item_copyright=None,
+    #     ttl=None,
+    link = app.config.feed_base_url + '/' + ctx['current_page_name'] + ctx['file_suffix']
+    item = {
+      'title': ctx.get('title'),
+      'link': link,
+      'unique_id': link,
+      'description': ctx.get('body'),
+      'pubdate': pub_date
+    }
+    if 'author' in metadata:
+        item['author'] = metadata['author']
+    feed_entries[nice_name(pagename, pub_date)] = item
+    #Additionally, we might like to provide our templates with a way to link to the rss output file
+    ctx['rss_link'] = app.config.feed_base_url + '/' + app.config.feed_filename
+
+def remove_dead_feed_item(app, env, docname):
+    """
+    TODO:
+    purge unwanted crap
+    """
+    global feed_entries
+    munged_name = ''.join([MAGIC_SEPARATOR,quote_plus(docname)])
+    for name in feed_entries:
+        if name.endswith(munged_name):
+            del(feed_entries[name])
+        
+
+def emit_feed(app, exc):
+    global feed_entries
+    import os.path
+    
     feed_dict = {
       'title': app.config.project,
       'link': app.config.feed_base_url,
@@ -31,50 +101,20 @@ def create_feed_container(app):
         feed_dict['feed_copyright'] = app.config.copyright
     feed = feedgenerator.Rss201rev2Feed(**feed_dict)
     app.builder.env.feed_feed = feed
-    if not hasattr(app.builder.env, 'feed_items'):
-        app.builder.env.feed_items = {}
-
-def create_feed_item(app, pagename, templatename, ctx, doctree):
-    """
-    Here we have access to nice HTML fragments to use in, say, an RSS feed.
-    """    
-    import dateutil.parser
-    date_parser = dateutil.parser.parser()
-    env = app.builder.env
-    metadata = app.builder.env.metadata.get(pagename, {})
-    
-    if 'Publish Date' not in metadata:
-        return #don't index dateless articles
-    # title, link, description, author_email=None,
-    #     author_name=None, author_link=None, pubdate=None, comments=None,
-    #     unique_id=None, enclosure=None, categories=(), item_copyright=None,
-    #     ttl=None,
-    
-    item = {
-      'title': ctx.get('title'),
-      'link': app.config.feed_base_url + '/' + ctx['current_page_name'] + ctx['file_suffix'],
-      'description': ctx.get('body'),
-      'pubdate': date_parser.parse(metadata['Publish Date'])
-    }
-    if 'author' in metadata:
-        item['author'] = metadata['author']
-    env.feed_items[pagename] = item
-    #Additionally, we might like to provide our templates with a way to link to the rss output file
-    ctx['rss_link'] = app.config.feed_base_url + '/' + app.config.feed_filename
-  
-def emit_feed(app, exc):
-    import os.path
-    ordered_items = app.builder.env.feed_items.values()
-    feed = app.builder.env.feed_feed
-    ordered_items.sort(
-      cmp=lambda x,y: cmp(x['pubdate'],y['pubdate']),
-      reverse=True)
-    for item in ordered_items:
-        feed.add_item(**item)     
+    ordered_keys = feed_entries.keys()
+    ordered_keys.sort(reverse=True)
+    for key in ordered_keys:
+        feed.add_item(**feed_entries[key])     
     outfilename = os.path.join(app.builder.outdir,
       app.config.feed_filename)
     fp = open(outfilename, 'w')
     feed.write(fp, 'utf-8')
     fp.close()
-    
 
+def nice_name(docname, date):
+    """
+    we need convenient filenames which incorporate dates for ease of sorting and
+    guid for uniqueness, plus will work in the FS without inconvenient
+    characters. NB, at the moment, hour of publication is ignored.
+    """
+    return quote_plus(MAGIC_SEPARATOR.join([date.isoformat(), docname]))

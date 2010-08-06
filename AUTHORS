@@ -24,9 +24,42 @@ mscgen:
 paverutils:
    Doug Hellmann <doug.hellmann@gmail.com>
 
+rubydomain:
+   SHIBUKAWA Yoshiki <yoshiki@shibu.jp>
+
 sword:
    Wei-Wei Guo <wwguocn@gmail.com>
 
 sdedit:
    SHIBUKAWA Yoshiki <yoshiki@shibu.jp>
 
+traclinks:
+   Kevin Horn <kevin.horn@gmail.com>
+
+zopeext:
+   Michael McNeil Forbes <mforbes@alum.mit.edu>
+
+googleanalytics:
+   Domen Kožar <domen@dev.si>
+
+issuetracker:
+   Sebastian Wiesner <lunaryorn@googlemail.com>
+
+epydoc:
+   Sebastian Wiesner <lunaryorn@googlemail.com>
+
+pyqt4:
+   Sebastian Wiesner <lunaryorn@googlemail.com>
+
+doxylink
+   Matt Williams <matt@milliams.com>
+
+ansi:
+   Sebastian Wiesner <lunaryorn@googlemail.com>
+
+programoutput:
+   Sebastian Wiesner <lunaryorn@googlemail.com>
+
+cheeseshop:
+   Richard Jones <r1chardj0n3s@gmail.com>
+   Georg Brandl <georg@python.org>
