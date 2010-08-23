@@ -44,6 +44,7 @@ def create_feed_item(app, pagename, templatename, ctx, doctree):
     """
     global feed_entries
     import dateutil.parser
+    from absolutify_urls import absolutify
     date_parser = dateutil.parser.parser()
     metadata = app.builder.env.metadata.get(pagename, {})
     
@@ -65,7 +66,7 @@ def create_feed_item(app, pagename, templatename, ctx, doctree):
       'title': ctx.get('title'),
       'link': link,
       'unique_id': link,
-      'description': ctx.get('body'),
+      'description': absolutify(ctx.get('body'), link),
       'pubdate': pub_date
     }
     if 'author' in metadata:
@@ -84,7 +85,6 @@ def remove_dead_feed_item(app, env, docname):
     for name in feed_entries:
         if name.endswith(munged_name):
             del(feed_entries[name])
-        
 
 def emit_feed(app, exc):
     global feed_entries
