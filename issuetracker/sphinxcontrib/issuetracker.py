@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2010, Sebastian Wiesner <lunaryorn@googlemail.com>
+# Copyright (c) 2010, 2011, Sebastian Wiesner <lunaryorn@googlemail.com>
 # All rights reserved.
 
 # Redistribution and use in source and binary forms, with or without
@@ -41,7 +41,6 @@
 import re
 import urllib
 from contextlib import closing
-from functools import partial
 from os import path
 
 from docutils import nodes
@@ -52,7 +51,7 @@ from sphinx.util.console import bold
 
 
 GITHUB_URL = 'https://github.com/%(user)s/%(project)s/issues/%(issue_id)s'
-BITBUCKET_URL = ('http://bitbucket.org/%(user)s/%(project)s/issue/'
+BITBUCKET_URL = ('https://bitbucket.org/%(user)s/%(project)s/issue/'
                  '%(issue_id)s/')
 
 
@@ -93,13 +92,29 @@ def get_bitbucket_issue_information(project, user, issue_id, app):
     return {'uri': uri, 'closed': not (is_open or is_new)}
 
 
+def get_debian_issue_information(project, user, issue_id, app):
+    import debianbts
+    try:
+        # get the bug
+        bug = debianbts.get_status(debianbts.get_bugs("bugs", issue_id))[0]
+    except IndexError:
+        return None
+
+    # check if issue matches project
+    if project not in [bug.package, bug.source]:
+        return None
+
+    uri = 'http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=%s' % issue_id
+    return {'uri': uri, 'closed': bug.done}
+
+
 def get_launchpad_issue_information(project, user, issue_id, app):
-    launchpad = getattr(env, 'issuetracker_launchpad', None)
+    launchpad = getattr(app.env, 'issuetracker_launchpad', None)
     if not launchpad:
         from launchpadlib.launchpad import Launchpad
         launchpad = Launchpad.login_anonymously(
             'sphinxcontrib.issuetracker', service_root='production')
-        env.issuetracker_launchpad = launchpad
+        app.env.issuetracker_launchpad = launchpad
     try:
         # get the bug
         bug = launchpad.bugs[issue_id]
@@ -191,6 +206,8 @@ BUILTIN_ISSUE_TRACKERS = {
     'github': make_issue_reference_resolver(get_github_issue_information),
     'bitbucket': make_issue_reference_resolver(
         get_bitbucket_issue_information),
+    'debian': make_issue_reference_resolver(
+        get_debian_issue_information),
     'launchpad': make_issue_reference_resolver(
         get_launchpad_issue_information),
     'google code': make_issue_reference_resolver(

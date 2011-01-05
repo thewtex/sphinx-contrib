@@ -22,7 +22,7 @@ This extension can be installed from the Python Package Index::
 Alternatively, you can clone the sphinx-contrib_ repository from BitBucket,
 and install the extension directly from the repository::
 
-   hg clone http://bitbucket.org/birkenfeld/sphinx-contrib
+   hg clone https://bitbucket.org/birkenfeld/sphinx-contrib
    cd sphinx-contrib/issuetracker
    python setup.py install
 
@@ -38,15 +38,25 @@ Add ``sphinxcontrib.issuetracker`` to the configuration value
    The issuetracker to use.  As of now, the following trackers are
    supported:
 
-   - ``github``: The issue tracker of http://github.com.  To use this issue
-     tracker, either Python 2.6 or later must be used, or simplejson_ must
-     be installed.
-   - ``bitbucket``: The issue tracker of http://bitbucket.org.  To use this
+   - ``github``: The issue tracker of https://github.com.  To use this issue
+     tracker, either Python 2.6 or later must be used, or simplejson_ must be
+     installed.
+   - ``bitbucket``: The issue tracker of https://bitbucket.org.  To use this
      issue tracker, `lxml`_ 2.0 or newer must be installed.
    - ``launchpad``: The issue tracker of https://launchpad.net.  To use this
      issue tracker, launchpadlib_ must be installed.
    - ``google code``: The issue tracker of http://code.google.com.  To use
      this issue tracker, Python 2.5 or newer is required.
+   - ``debian``: The Debian issue tracker at http://bugs.debian.org.  To use
+     this issue tracker, you need the debianbts_ module from (available as
+     ``python-debianbts`` in Debian package repositories).
+
+     .. warning::
+
+        The underlying ``debianbts`` module has serious quality issues
+        [#debianbts-problems]_.  Use at own risk, the code of this issue
+        tracker is unlikely to receive bug fixes and consequently might break
+        any time.
 
 .. confval:: issuetracker_project
 
@@ -113,6 +123,18 @@ functionality (e.g. integration of some other issue tracker).  Patches are
 welcome!
 
 
+.. rubric:: Footnotes
+
+.. [#debianbts-problems] ``debianbts`` does not provide a standard
+   distutils/setuptools installation script.  It is consequently not contained
+   in the package index, and hard to install on anything else then Debian and
+   Debian-based distributions.  And above all, it uses the outdated and
+   unmaintained SOAPpy library internally.  Patches, which replace
+   ``debianbts`` with some decent SOAP code (probably based on suds_) are
+   welcome.  Patches, which replace SOAP completely with some decent RPC
+   interface are even more welcome.
+
+
 .. toctree::
    :maxdepth: 2
    :hidden:
@@ -120,11 +142,13 @@ welcome!
    changes.rst
 
 
-.. _`Sphinx`: http://sphinx.pocoo.org/
-.. _`Sphinx issue tracker`: http://bitbucket.org/birkenfeld/sphinx/issues/
-.. _`lxml`: http://codespeak.net/lxml
-.. _`simplejson`: http://pypi.python.org/pypi/simplejson/
-.. _`launchpadlib`: http://pypi.python.org/pypi/launchpadlib/
-.. _`sphinx-contrib`: http://bitbucket.org/birkenfeld/sphinx-contrib
-.. _`issue tracker`: http://bitbucket.org/birkenfeld/sphinx-contrib/issues
-.. _LICENSE: http://bitbucket.org/birkenfeld/sphinx-contrib/src/tip/LICENSE
+.. _Sphinx: http://sphinx.pocoo.org/
+.. _Sphinx issue tracker: https://bitbucket.org/birkenfeld/sphinx/issues/
+.. _lxml: http://codespeak.net/lxml
+.. _simplejson: http://pypi.python.org/pypi/simplejson/
+.. _launchpadlib: http://pypi.python.org/pypi/launchpadlib/
+.. _debianbts: https://github.com/venthur/python-debianbts
+.. _suds: https://fedorahosted.org/suds/
+.. _sphinx-contrib: https://bitbucket.org/birkenfeld/sphinx-contrib
+.. _issue tracker: https://bitbucket.org/birkenfeld/sphinx-contrib/issues/
+.. _LICENSE: https://bitbucket.org/birkenfeld/sphinx-contrib/src/tip/LICENSE

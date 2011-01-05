@@ -2,22 +2,25 @@
 
 from setuptools import setup, find_packages
 
-
-with open('README') as stream:
-    long_desc = stream.read()
-
-
-requires = ['Sphinx>=1.0b2']
+f = open('README', 'r')
+try:
+    long_desc = f.read()
+finally:
+    f.close()
+    
+requires = ['Sphinx>=0.6',
+            #'PyEnchant>=1.6.5',
+            ]
 
 setup(
-    name='sphinxcontrib-issuetracker',
-    version='0.6',
-    url='http://packages.python.org/sphinxcontrib-issuetracker',
-    download_url='http://pypi.python.org/pypi/sphinxcontrib-issuetracker',
+    name='sphinxcontrib-spelling',
+    version='0.1',
+    url='http://bitbucket.org/birkenfeld/sphinx-contrib',
+    download_url='http://pypi.python.org/pypi/sphinxcontrib-spelling',
     license='BSD',
-    author='Sebastian Wiesner',
-    author_email='lunaryorn@googlemail.com',
-    description='Sphinx integration with different issuetrackers',
+    author='Doug Hellmann',
+    author_email='doug.hellmann@gmail.com',
+    description='Sphinx "spelling" extension',
     long_description=long_desc,
     zip_safe=False,
     classifiers=[

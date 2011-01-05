@@ -1,7 +1,15 @@
+0.6 (Jan 04, 2011)
+==================
+
+- Added support for the debian bugtracker (thanks to Fladischer Michael)
+- Fixed NameError in launchpad issue tracker
+- Bitbucket also uses HTTPS urls now
+
+
 0.5.4 (Nov 15, 2010)
 ====================
 
-- Github uses https URLS now
+- Github uses HTTPS urls now
 
 
 0.5.3 (Nov 14, 2010)
