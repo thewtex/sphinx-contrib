@@ -29,7 +29,7 @@ php_sig_re = re.compile(
     r'''^ ([\w.]*\:\:)?          # class name(s)
           (\$?\w+)  \s*          # thing name
           (?: \((.*)\)           # optional: arguments
-           (?:\s* -> \s* (.*))?  #           return annotation
+          (?:\s* -> \s* (.*))?   # return annotation
           )? $                   # and nothing more
           ''', re.VERBOSE)
 
@@ -40,7 +40,8 @@ NS = '\\'
 
 separators = {
   'method':'::', 'function':NS, 'class':NS, 'namespace':NS,
-  'global':'', 'const':'::', 'attr': '::$', 'exception': '', 'interface':NS
+  'global':'', 'const':'::', 'attr': '::$', 'exception': '',
+  'staticmethod':'::', 'interface':NS
 }
 
 php_separator = re.compile(r"(\w+)?(?:[:]{2})?")
@@ -73,7 +74,7 @@ class PhpObject(ObjectDescription):
         Field('returnvalue', label=l_('Returns'), has_arg=False,
               names=('returns', 'return')),
         Field('returntype', label=l_('Return type'), has_arg=False,
-              names=('rtype',)),
+              names=('rtype', 'returntype')),
     ]
 
     def get_signature_prefix(self, sig):
@@ -112,26 +113,32 @@ class PhpObject(ObjectDescription):
             'namespace', self.env.temp_data.get('php:namespace'))
 
         classname = self.env.temp_data.get('php:class')
+        separator = separators[self.objtype]
 
         if self.objtype == 'global':
             add_module = False
             modname = None
             classname = None
             fullname = name
-        elif classname:
-            add_module = False
-            if name_prefix and name_prefix.startswith(classname):
-                fullname = name_prefix + name
-                # class name is given again in the signature
-                name_prefix = name_prefix[len(classname):].lstrip('::')
-            else:
-                separator = separators[self.objtype]
-                fullname = classname + separator + name_prefix + name
         else:
             add_module = True
-            if name_prefix:
-                classname = name_prefix.rstrip('::')
+            # name_prefix and a non-static method, means the classname was 
+            # repeated. Trim off the <class>::
+            if name_prefix and self.objtype != 'staticmethod':
+                if name_prefix.startswith(classname):
+                    name_prefix = name_prefix[len(classname):].rstrip('::')
+                classname = classname.rstrip('::')
+                fullname = name_prefix + classname + separator + name
+            elif name_prefix:
+                classname = classname.rstrip('::')
                 fullname = name_prefix + name
+
+            # Currently in a class, but not creating another class,
+            elif classname and not self.objtype in ['class', 'exception']:                
+                if not self.env.temp_data['php:in_class']:
+                    name_prefix = classname + separator
+                
+                fullname = classname + separator + name
             else:
                 classname = ''
                 fullname = name
@@ -146,11 +153,10 @@ class PhpObject(ObjectDescription):
             signode += addnodes.desc_annotation(sig_prefix, sig_prefix)
 
         if name_prefix:
-            if modname:
+            if modname and not self.env.temp_data['php:in_class']:
                 name_prefix = modname + NS + name_prefix
             signode += addnodes.desc_addname(name_prefix, name_prefix)
-        # exceptions are a special case, since they are documented in the
-        # 'exceptions' module.
+
         elif add_module and self.env.config.add_module_names:
             if self.objtype == 'global':
                 nodetext = ''
@@ -158,7 +164,8 @@ class PhpObject(ObjectDescription):
             else:
                 modname = self.options.get(
                     'namespace', self.env.temp_data.get('php:namespace'))
-                if modname and modname != 'exceptions':
+
+                if modname and not self.env.temp_data['php:in_class']:
                     nodetext = modname + NS
                     signode += addnodes.desc_addname(nodetext, nodetext)
 
@@ -170,6 +177,7 @@ class PhpObject(ObjectDescription):
             if retann:
                 signode += addnodes.desc_returns(retann, retann)
             return fullname, name_prefix
+
         signode += addnodes.desc_parameterlist()
 
         stack = [signode[-1]]
@@ -240,14 +248,6 @@ class PhpObject(ObjectDescription):
             self.indexnode['entries'].append(('single', indextext,
                                               fullname, fullname))
 
-    def before_content(self):
-        # needed for automatic qualification of members (reset in subclasses)
-        self.clsname_set = False
-
-    def after_content(self):
-        if self.clsname_set:
-            self.env.temp_data['php:class'] = None
-
 
 
 class PhpGloballevel(PhpObject):
@@ -273,6 +273,8 @@ class PhpNamespacelevel(PhpObject):
         """
         Adds class prefix for constants created inside classes
         """
+        if self.objtype == 'const':
+            return _('constant ')
         if self.class_name != '':
             return self.class_name + '::'
 
@@ -289,6 +291,7 @@ class PhpNamespacelevel(PhpObject):
             return _('%s (constant in %s)') % (name_cls[0], modname)
         else:
             return ''
+
 
 class PhpClasslike(PhpObject):
     """
@@ -312,11 +315,13 @@ class PhpClasslike(PhpObject):
         else:
             return ''
 
+    def after_content(self):
+        self.env.temp_data['php:in_class'] = False
+
     def before_content(self):
-        PhpObject.before_content(self)
+        self.env.temp_data['php:in_class'] = True
         if self.names:
             self.env.temp_data['php:class'] = self.names[0][0]
-            self.clsname_set = True
 
 class PhpClassmember(PhpObject):
     """
@@ -326,6 +331,8 @@ class PhpClassmember(PhpObject):
     def get_signature_prefix(self, sig):
         if self.objtype == 'attr':
             return _('property ')
+        if self.objtype == 'staticmethod':
+            return _('static ')
         return ''
 
     def needs_arglist(self):
@@ -378,6 +385,7 @@ class PhpNamespace(Directive):
         modname = self.arguments[0].strip()
         noindex = 'noindex' in self.options
         env.temp_data['php:namespace'] = modname
+        env.temp_data['php:class'] = None
         env.domaindata['php']['namespaces'][modname] = (
             env.docname, self.options.get('synopsis', ''),
             'deprecated' in self.options)
@@ -508,6 +516,7 @@ class PhpDomain(Domain):
         'const': PhpNamespacelevel,
         'class': PhpClasslike,
         'method': PhpClassmember,
+        'staticmethod': PhpClassmember,
         'attr': PhpClassmember,
         'exception': PhpClasslike,
         'namespace': PhpNamespace,
