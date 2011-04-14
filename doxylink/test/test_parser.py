@@ -64,6 +64,9 @@ functions = [('PolyVox::Volume::getDepth', ('PolyVox::Volume::getDepth', '')),
              ('operator[]', ('operator[]', '')),
 ]
 
+multiple_namespaces = [('PolyVox::Test::TestFunction(int foo)', ('PolyVox::Test::TestFunction', '(int)')),
+]
+
 class TestNormalise(unittest.TestCase):
 	def setUp(self):
 		self.arglists = arglists
@@ -72,6 +75,7 @@ class TestNormalise(unittest.TestCase):
 		self.multiple_qualifiers = multiple_qualifiers
 		self.numbers_for_defaults = numbers_for_defaults
 		self.flags_in_defaults = flags_in_defaults
+		self.multiple_namespaces = multiple_namespaces
 	
 	def test_split_function(self):
 		for function in self.functions:
@@ -96,6 +100,10 @@ class TestNormalise(unittest.TestCase):
 	def test_flags_in_defaults(self):
 		for arglist in self.flags_in_defaults:
 			self.assertEqual(parsing.normalise(arglist[0]), arglist[1])
+			
+	def test_multiple_namespaces(self):
+		for arglist in self.multiple_namespaces:
+			self.assertEqual(parsing.normalise(arglist[0]), arglist[1])
 	
 	def test_false_signatures(self):
 		#This is an invalid function argument. Caused by a bug in Doxygen. See openbabel/src/ops.cpp : theOpCenter("center")
@@ -109,9 +117,10 @@ if __name__ == "__main__":
 		import profile
 	
 	all_tests = arglists + varargs + multiple_qualifiers + functions + numbers_for_defaults + flags_in_defaults
+	all_tests += all_tests + all_tests + all_tests + all_tests
 	
 	profile.runctx("for arglist in all_tests: parsing.normalise(arglist[0])", globals(), locals(), filename='parsing_profile')
 	p = pstats.Stats('parsing_profile')
-	p.strip_dirs().sort_stats('cumulative').print_stats(20)
+	p.strip_dirs().sort_stats('time', 'cum').print_stats(40)
 
 

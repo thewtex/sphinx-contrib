@@ -14,7 +14,7 @@ __author__ = 'Doug Hellmann <doug.hellmann@gmail.com>'
 
 from paver.easy import *
 import sphinx
-
+import textwrap
 
 @task
 def html(options):
@@ -85,7 +85,9 @@ def pdf(options):
       default: pdf
     """
     run_sphinx(options, 'pdf')
-    latex_dir = path(options.builddir) / 'latex'
+    options.order('pdf')
+    paths = _get_paths(options)
+    latex_dir = paths.builddir / options.builder
     sh('cd %s; make' % latex_dir)
     return
 
@@ -134,7 +136,7 @@ def run_sphinx(options, *option_sets):
     # Set the search order of the options
     options.order(*option_sets, **kwds)
     
-    paths = _get_paths(options)
+    paths = _get_and_create_paths(options)
     template_args = [ '-A%s=%s' % (name, value)
                       for (name, value) in getattr(options, 'template_args', {}).items() 
                       ]
@@ -150,9 +152,19 @@ def run_sphinx(options, *option_sets):
     options.order()
     return
 
+def _get_and_create_paths(options):
+    """Retrieves and creates paths needed to run sphinx.
+
+    Returns a Bundle with the required values filled in.
+    """
+    paths = _get_paths(options)
+    paths.builddir.mkdir()
+    paths.outdir.mkdir()
+    paths.doctrees.mkdir()
+    return paths
 
 def _get_paths(options):
-    """Retrieve and create the paths needed to run sphinx.
+    """Retrieves paths needed to run sphinx.
     
     Returns a Bundle with the required values filled in.
     """
@@ -164,7 +176,6 @@ def _get_paths(options):
                            % docroot)
     
     builddir = docroot / opts.get("builddir", ".build")
-    builddir.mkdir()
     
     srcdir = docroot / opts.get("sourcedir", "")
     if not srcdir.exists():
@@ -180,7 +191,6 @@ def _get_paths(options):
         outdir = path(outdir)
     else:
         outdir = builddir / opts.get('builder', 'html')
-    outdir.mkdir()
     
     # Where are doctrees cached?
     doctrees = opts.get('doctrees', '')
@@ -188,9 +198,46 @@ def _get_paths(options):
         doctrees = builddir / "doctrees"
     else:
         doctrees = path(doctrees)
-    doctrees.mkdir()
 
     return Bunch(locals())
+
+
+def adjust_line_widths(lines, break_lines_at, line_break_mode):
+    broken_lines = []
+    for l in lines:
+        # apparently blank line
+        if not l.strip() or len(l) <= break_lines_at:
+            broken_lines.append(l)
+            continue
+
+        if line_break_mode == 'break':
+            while l:
+                part, l = l[:break_lines_at], l[break_lines_at:]
+                broken_lines.append(part)
+
+        elif line_break_mode == 'wrap':
+            broken_lines.extend( textwrap.fill(l, width=break_lines_at).splitlines() )
+
+        elif line_break_mode == 'fill':
+            prefix = l[:len(l)-len(l.lstrip())]
+            broken_lines.extend( textwrap.fill(l, width=break_lines_at,
+                                               subsequent_indent=prefix).splitlines() )
+
+        elif line_break_mode == 'continue':
+            while l:
+                part, l = l[:break_lines_at], l[break_lines_at:]
+                if l:
+                    part = part + '\\'
+                broken_lines.append(part)
+
+        elif line_break_mode == 'truncate':
+            broken_lines.append( l[:break_lines_at] )
+
+        else:
+            raise ValueError('Unrecognized line_break_mode "%s"' % line_break_mode)
+
+    return broken_lines
+    
 
 
 def run_script(input_file, script_name, 
@@ -199,6 +246,7 @@ def run_script(input_file, script_name,
                ignore_error=False, 
                trailing_newlines=True,
                break_lines_at=0,
+               line_break_mode='break',
                ):
     """Run a script in the context of the input_file's directory, 
     return the text output formatted to be included as an rst
@@ -231,6 +279,16 @@ def run_script(input_file, script_name,
        Integer indicating the length where lines should be broken and
        continued on the next line.  Defaults to 0, meaning no special
        handling should be done.
+
+     line_break_mode='break'
+       Name of mode to break lines.
+
+         break
+           Insert a hard break
+         continue
+           Insert a hard break with a backslash
+         wrap
+           Use textwrap.fill() to wrap
        
     """
     rundir = path(input_file).dirname()
@@ -254,17 +312,20 @@ def run_script(input_file, script_name,
         response = '\n::\n\n'
     else:
         response = ''
-    response += '\t$ %(cmd)s\n\t' % vars()
-    lines = output_text.splitlines()
+#     response += '\t$ %(cmd)s\n\n\t' % vars()
+
+    command_line = adjust_line_widths(['\t$ %s' % cmd],
+                                      break_lines_at - 1 if break_lines_at else 73,
+                                      'continue')
+        
+    lines = []
+    lines.extend(command_line)
+    lines.append('') # a blank line
+    lines.extend(output_text.splitlines()) # the output
 
     # Deal with lines that might be too long
     if break_lines_at:
-        broken_lines = []
-        for l in lines:
-            while l:
-                part, l = l[:break_lines_at], l[break_lines_at:]
-                broken_lines.append(part)
-        lines = broken_lines
+        lines = adjust_line_widths(lines, break_lines_at, line_break_mode)
                 
     response += '\n\t'.join(lines)
     if trailing_newlines:

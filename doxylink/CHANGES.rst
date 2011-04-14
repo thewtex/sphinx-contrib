@@ -1,3 +1,18 @@
+1.1 (Feb 19, 2011)
+====================
+
+- Add support for linking directly to struct definitions.
+- Allow to link to functions etc. which are in a header/source file but not a member of a class.
+
+1.0 (Dec 14, 2010)
+====================
+
+- New Dependency: PyParsing (http://pyparsing.wikispaces.com/)
+- Completely new tag file parsing system. Allows for function overloading.
+  The parsed results are cached to speed things up.
+- Full usage documentation. Build with `sphinx-build -W -b html doc html`.
+- Fix problem with mixed slashes when building on Windows.
+
 0.4 (Aug 15, 2010)
 ====================
 

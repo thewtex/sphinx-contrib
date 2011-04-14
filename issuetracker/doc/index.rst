@@ -6,10 +6,11 @@
 
 This extension for Sphinx_ 1.0 parses textual issue references like ``#10``,
 looks up the issue in the configured issue tracker, and includes a link to
-the issue.
+the issue.  References in inline literals and literal blocks (e.g. source code
+examples) are ignored.
 
-The extension is available under the terms of the BSD license, see LICENSE_
-for more information.
+The extension is available under the terms of the BSD license, see
+:doc:`license` for more information.
 
 
 Installation
@@ -22,7 +23,7 @@ This extension can be installed from the Python Package Index::
 Alternatively, you can clone the sphinx-contrib_ repository from BitBucket,
 and install the extension directly from the repository::
 
-   hg clone http://bitbucket.org/birkenfeld/sphinx-contrib
+   hg clone https://bitbucket.org/birkenfeld/sphinx-contrib
    cd sphinx-contrib/issuetracker
    python setup.py install
 
@@ -38,15 +39,25 @@ Add ``sphinxcontrib.issuetracker`` to the configuration value
    The issuetracker to use.  As of now, the following trackers are
    supported:
 
-   - ``github``: The issue tracker of http://github.com.  To use this issue
-     tracker, either Python 2.6 or later must be used, or simplejson_ must
-     be installed.
-   - ``bitbucket``: The issue tracker of http://bitbucket.org.  To use this
+   - ``github``: The issue tracker of https://github.com.  To use this issue
+     tracker, either Python 2.6 or later must be used, or simplejson_ must be
+     installed.
+   - ``bitbucket``: The issue tracker of https://bitbucket.org.  To use this
      issue tracker, `lxml`_ 2.0 or newer must be installed.
-   - ``launchpad``: The issue tracker of http://launchpad.net.  To use this
+   - ``launchpad``: The issue tracker of https://launchpad.net.  To use this
      issue tracker, launchpadlib_ must be installed.
    - ``google code``: The issue tracker of http://code.google.com.  To use
      this issue tracker, Python 2.5 or newer is required.
+   - ``debian``: The Debian issue tracker at http://bugs.debian.org.  To use
+     this issue tracker, you need the debianbts_ module from (available as
+     ``python-debianbts`` in Debian package repositories).
+
+     .. warning::
+
+        The underlying ``debianbts`` module has serious quality issues
+        [#debianbts-problems]_.  Use at own risk, the code of this issue
+        tracker is unlikely to receive bug fixes and consequently might break
+        any time.
 
 .. confval:: issuetracker_project
 
@@ -90,18 +101,32 @@ find issue references:
 Customization
 -------------
 
-If you use an issue tracker, that is not supported by this extension, then
-set :confval:`issuetracker` to ``None`` or leave it unset, and create your
-own callback for the ``missing-reference`` event of Sphinx.  This callback
-should handle all nodes whose ``reftype`` attribute is ``'issue'``, and
-return ``None`` for all other nodes.  For nodes whose ``reftype`` is
-``'issue'`` the issue id is available in the ``reftarget`` attribute.
+If you use an issue tracker, that is not supported by this extension, then set
+:confval:`issuetracker` to ``None`` or leave it unset, and connect your own
+callback to the :event:`issuetracker-resolve-issue`:
 
-You may want to use the following convenience function.  It creates a
-callback that does all the node handling for you.  You only have to provide
-a function, which returns metadata for the given issue id:
+.. event:: issuetracker-resolve-issue(app, project, user, issue_id)
 
-.. autofunction:: make_issue_reference_resolver
+   Emitted if a issue reference is to be resolved.
+
+   ``app`` is the Sphinx application object.  ``project`` and ``user`` are
+   strings, describing the issuetracker project and username.  These are simply
+   the values, the user entered for :confval:`issuetracker_project` and
+   :confval:`issuetracker_user`.  ``issue_id`` is the issue id as string.
+
+   Callbacks for this event must return a dictionary with issue information,
+   having the following keys:
+
+   - ``'uri'``: The URI to the issue web page
+   - ``'closed'``: ``True``, if the issue is closed.  If ``False`` or if the
+     key is missing, the issue is still open.
+
+   If ``'uri'`` is missing, the issue reference is not turned into a real
+   reference, but remains in plain text.
+
+   A callback can return ``None`` instead to indicate, that it cannot resolve
+   the issue.  Resolval is delegated to further callbacks, that might be
+   connected to the event.
 
 
 Contribution
@@ -113,18 +138,35 @@ functionality (e.g. integration of some other issue tracker).  Patches are
 welcome!
 
 
+.. include:: ../CREDITS
+
+
+.. rubric:: Footnotes
+
+.. [#debianbts-problems] ``debianbts`` does not provide a standard
+   distutils/setuptools installation script.  It is consequently not contained
+   in the package index, and hard to install on anything else then Debian and
+   Debian-based distributions.  And above all, it uses the outdated and
+   unmaintained SOAPpy library internally.  Patches, which replace
+   ``debianbts`` with some decent SOAP code (probably based on suds_) are
+   welcome.  Patches, which replace SOAP completely with some decent RPC
+   interface are even more welcome.
+
+
 .. toctree::
    :maxdepth: 2
    :hidden:
 
    changes.rst
+   license.rst
 
 
-.. _`Sphinx`: http://sphinx.pocoo.org/
-.. _`Sphinx issue tracker`: http://bitbucket.org/birkenfeld/sphinx/issues/
-.. _`lxml`: http://codespeak.net/lxml
-.. _`simplejson`: http://pypi.python.org/pypi/simplejson/
-.. _`launchpadlib`: http://pypi.python.org/pypi/launchpadlib/
-.. _`sphinx-contrib`: http://bitbucket.org/birkenfeld/sphinx-contrib
-.. _`issue tracker`: http://bitbucket.org/birkenfeld/sphinx-contrib/issues
-.. _LICENSE: http://bitbucket.org/birkenfeld/sphinx-contrib/src/tip/LICENSE
+.. _Sphinx: http://sphinx.pocoo.org/
+.. _Sphinx issue tracker: https://bitbucket.org/birkenfeld/sphinx/issues/
+.. _lxml: http://lxml.de
+.. _simplejson: http://pypi.python.org/pypi/simplejson/
+.. _launchpadlib: http://pypi.python.org/pypi/launchpadlib/
+.. _debianbts: https://github.com/venthur/python-debianbts
+.. _suds: https://fedorahosted.org/suds/
+.. _sphinx-contrib: https://bitbucket.org/birkenfeld/sphinx-contrib
+.. _issue tracker: https://bitbucket.org/birkenfeld/sphinx-contrib/issues/

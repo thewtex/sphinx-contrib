@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2010, Sebastian Wiesner <lunaryorn@googlemail.com>
+# Copyright (c) 2010, 2011, Sebastian Wiesner <lunaryorn@googlemail.com>
 # All rights reserved.
 
 # Redistribution and use in source and binary forms, with or without
@@ -37,11 +37,11 @@
     .. moduleauthor::  Sebastian Wiesner  <lunaryorn@googlemail.com>
 """
 
+__version__ = '0.7.2'
 
 import re
 import urllib
 from contextlib import closing
-from functools import partial
 from os import path
 
 from docutils import nodes
@@ -51,18 +51,18 @@ from sphinx.util.osutil import copyfile
 from sphinx.util.console import bold
 
 
-GITHUB_URL = 'http://github.com/%(user)s/%(project)s/issues/%(issue_id)s'
-BITBUCKET_URL = ('http://bitbucket.org/%(user)s/%(project)s/issue/'
+GITHUB_URL = 'https://github.com/%(user)s/%(project)s/issues/%(issue_id)s'
+BITBUCKET_URL = ('https://bitbucket.org/%(user)s/%(project)s/issue/'
                  '%(issue_id)s/')
 
 
-def get_github_issue_information(project, user, issue_id, env):
+def get_github_issue_information(app, project, user, issue_id):
     try:
         import json
     except ImportError:
         import simplejson as json
 
-    show_issue = ('http://github.com/api/v2/json/issues/show/'
+    show_issue = ('https://github.com/api/v2/json/issues/show/'
                   '%(user)s/%(project)s/%(issue_id)s' % locals())
 
     with closing(urllib.urlopen(show_issue)) as response:
@@ -70,34 +70,52 @@ def get_github_issue_information(project, user, issue_id, env):
     if 'error' in response:
         return None
 
-    info = response['issue']
-    info['closed'] = info['state'] == 'closed'
-    info['uri'] = GITHUB_URL % locals()
-    return info
+    return {'closed': response['issue']['state'] == 'closed',
+            'uri': GITHUB_URL % locals()}
 
 
-def get_bitbucket_issue_information(project, user, issue_id, env):
+def get_bitbucket_issue_information(app, project, user, issue_id):
     from lxml.html import parse
 
     uri = BITBUCKET_URL % locals()
     with closing(urllib.urlopen(uri)) as response:
         if response.getcode() == 404:
-            # issue didn't exist
+            return None
+        elif response.getcode() != 200:
+            # warn about unexpected response code
+            app.warn('issue %s unavailable with code %s' %
+                     (issue_id, response.getcode()))
             return None
         tree = parse(response)
     info = tree.getroot().cssselect('.issues-issue-infotable')[0]
     is_new = info.cssselect('.issue-status-new')
-    is_open = info.cssselect('.issue-stats-open')
+    is_open = info.cssselect('.issue-status-open')
     return {'uri': uri, 'closed': not (is_open or is_new)}
 
 
-def get_launchpad_issue_information(project, user, issue_id, env):
-    launchpad = getattr(env, 'issuetracker_launchpad', None)
+def get_debian_issue_information(app, project, user, issue_id):
+    import debianbts
+    try:
+        # get the bug
+        bug = debianbts.get_status(debianbts.get_bugs("bugs", issue_id))[0]
+    except IndexError:
+        return None
+
+    # check if issue matches project
+    if project not in [bug.package, bug.source]:
+        return None
+
+    uri = 'http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=%s' % issue_id
+    return {'uri': uri, 'closed': bug.done}
+
+
+def get_launchpad_issue_information(app, project, user, issue_id):
+    launchpad = getattr(app.env, 'issuetracker_launchpad', None)
     if not launchpad:
         from launchpadlib.launchpad import Launchpad
         launchpad = Launchpad.login_anonymously(
             'sphinxcontrib.issuetracker', service_root='production')
-        env.issuetracker_launchpad = launchpad
+        app.env.issuetracker_launchpad = launchpad
     try:
         # get the bug
         bug = launchpad.bugs[issue_id]
@@ -116,7 +134,7 @@ def get_launchpad_issue_information(project, user, issue_id, env):
     return {'uri': uri, 'closed': bool(task.date_closed)}
 
 
-def get_google_code_issue_information(project, user, issue_id, env):
+def get_google_code_issue_information(app, project, user, issue_id):
     from xml.etree import cElementTree as etree
 
     show_issue = ('http://code.google.com/feeds/issues/p/'
@@ -124,69 +142,26 @@ def get_google_code_issue_information(project, user, issue_id, env):
     with closing(urllib.urlopen(show_issue)) as response:
         if response.getcode() == 404:
             return None
+        elif response.getcode() != 200:
+            # warn about unavailable issues
+            app.warn('issue %s unavailable with code %s' %
+                     (issue_id, response.getcode()))
+            return None
         tree = etree.parse(response)
 
     state = tree.find(
         '{http://schemas.google.com/projecthosting/issues/2009}state')
-    uri = 'http://code.google.com/p/html5lib/issues/detail?id=%s' % issue_id
-    return {'uri': uri, 'closed': state and state.text == 'closed'}
-
-
-def make_issue_reference_resolver(get_issue_information):
-    """
-    Create and return a function which serves as callback for the
-    ``missing-reference`` event, and handles all pending references whose
-    ``reftype`` is ``'issue'``.
-
-    If invoked, the function created by this function returns a reference
-    node which points to the issue, or ``None`` if the issue reference could
-    not be resolved.
-
-    ``get_issue_information`` must be a callable, accepting the follwing
-    four arguments:
-
-    1. The issue tracker project as given to :confval:`issuetracker_project`
-    2. The issue tracker user name as given to :confval:`issuetracker_user`
-    3. The issue id
-    4. The sphinx build environment
-
-    It shall return a dictionary, which may contain the following items:
-
-    - ``'uri'``: The uri to a website representing the issue.  If missing,
-      the created function returns ``None`` to indicate that it can't
-      resolve this issue.
-    - ``'closed'``: If present and ``True``, mark the issue as closed by
-      adding the class ``issue-closed`` to the returned reference.
-    """
-    def resolver(app, env, node, contnode):
-        if node['reftype'] != 'issue':
-            return
-        info = get_issue_information(
-            app.config.issuetracker_project or app.config.project,
-            app.config.issuetracker_user, node['reftarget'], env)
-        if info is None:
-            return None
-        uri = info.get('uri')
-        if not uri:
-            return None
-        reference = nodes.reference()
-        reference['refuri'] = uri
-        if info.get('closed'):
-            reference['classes'].append('issue-closed')
-        reference['classes'].append('reference-issue')
-        reference.append(contnode)
-        return reference
-    return resolver
+    uri = ('http://code.google.com/p/%(project)s/issues/'
+           'detail?id=%(issue_id)s' % locals())
+    return {'uri': uri, 'closed': state is not None and state.text == 'closed'}
 
 
 BUILTIN_ISSUE_TRACKERS = {
-    'github': make_issue_reference_resolver(get_github_issue_information),
-    'bitbucket': make_issue_reference_resolver(
-        get_bitbucket_issue_information),
-    'launchpad': make_issue_reference_resolver(
-        get_launchpad_issue_information),
-    'google code': make_issue_reference_resolver(
-        get_google_code_issue_information),
+    'github': get_github_issue_information,
+    'bitbucket': get_bitbucket_issue_information,
+    'debian': get_debian_issue_information,
+    'launchpad': get_launchpad_issue_information,
+    'google code': get_google_code_issue_information,
     }
 
 
@@ -205,11 +180,19 @@ class IssuesReferences(Transform):
         if isinstance(issue_pattern, basestring):
             issue_pattern = re.compile(issue_pattern)
         for node in self.document.traverse(nodes.Text):
-            text = unicode(node)
             parent = node.parent
+            if isinstance(parent, (nodes.literal, nodes.FixedTextElement)):
+                # ignore inline and block literal text
+                continue
+            text = unicode(node)
             new_nodes = []
             last_issue_ref_end = 0
             for match in issue_pattern.finditer(text):
+                # catch invalid pattern with too many groups
+                if len(match.groups()) != 1:
+                    raise ValueError(
+                        'issuetracker_issue_pattern must have '
+                        'exactly one group: %r' % (match.groups(),))
                 # extract the text between the last issue reference and the
                 # current issue reference and put it into a new text node
                 head = text[last_issue_ref_end:match.start()]
@@ -241,14 +224,77 @@ class IssuesReferences(Transform):
             parent.replace(node, new_nodes)
 
 
+def make_issue_reference(issue_uri, content_node, is_closed=False):
+    """
+    Create a reference node for the given issue.
+
+    ``issue_uri`` is the uri of a web page describing the issue.  It must *not*
+    be a resource uri for a webservice of an issue tracker.  ``content_node``
+    is a docutils node, which is added as content of the created reference.  If
+    ``is_closed`` is ``True``, the issue is considered as closed, and the
+    reference node gets an additional class ``'issue-closed'``.
+
+    Return a :class:`docutils.nodes.reference` for the issue.
+    """
+    reference = nodes.reference()
+    reference['refuri'] = issue_uri
+    if is_closed:
+        reference['classes'].append('issue-closed')
+    reference['classes'].append('reference-issue')
+    reference.append(content_node)
+    return reference
+
+
+def lookup_issue_information(issue_id, app):
+    """
+    Lookup information for the given issue.
+
+    The issue information is first searched in an internal cache.  On cache
+    miss, ``fallback_func`` is called to retrieve the issue information from
+    the issue tracker.  This information is than cached.
+
+    ``app`` is the sphinx application object.  ``issue_id`` is a string
+    containing the issue id.
+    """
+    cache = app.env.issuetracker_cache
+    info = cache.get(issue_id)
+    if not info:
+        project = app.config.issuetracker_project or app.config.project
+        user = app.config.issuetracker_user
+        info = app.emit_firstresult(
+            'issuetracker-resolve-issue', project, user, issue_id)
+        cache[issue_id] = info
+    return info
+
+
+def resolve_issue_references(app, doctree):
+    """
+    Resolve all pending issue references in the given ``doctree``.
+    """
+    for node in doctree.traverse(pending_xref):
+        if node['reftype'] == 'issue':
+            info = lookup_issue_information(node['reftarget'], app)
+            if (not info) or 'uri' not in info:
+                new_node = node[0]
+            else:
+                new_node = make_issue_reference(info['uri'], node[0],
+                                                info.get('closed'))
+            node.replace_self(new_node)
+
+
 def auto_connect_builtin_issue_resolvers(app):
     if app.config.issuetracker:
-        app.connect('missing-reference',
+        app.connect('issuetracker-resolve-issue',
                     BUILTIN_ISSUE_TRACKERS[app.config.issuetracker.lower()])
 
 
 def add_stylesheet(app):
     app.add_stylesheet('issuetracker.css')
+
+
+def init_cache(app):
+    if not hasattr(app.env, 'issuetracker_cache'):
+        app.env.issuetracker_cache = {}
 
 
 def copy_stylesheet(app, exception):
@@ -265,6 +311,7 @@ def copy_stylesheet(app, exception):
 def setup(app):
     app.require_sphinx('1.0')
     app.add_transform(IssuesReferences)
+    app.add_event('issuetracker-resolve-issue')
     app.connect('builder-inited', auto_connect_builtin_issue_resolvers)
     app.add_config_value('issuetracker_issue_pattern',
                          re.compile(r'#(\d+)'), 'env')
@@ -272,4 +319,6 @@ def setup(app):
     app.add_config_value('issuetracker_project', None, 'env')
     app.add_config_value('issuetracker', None, 'env')
     app.connect('builder-inited', add_stylesheet)
+    app.connect('builder-inited', init_cache)
+    app.connect('doctree-read', resolve_issue_references)
     app.connect('build-finished', copy_stylesheet)
