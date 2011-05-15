@@ -69,6 +69,8 @@ List of extensions
 - seqdiag: embed sequence diagrams by using seqdiag_
 - actdiag: embed activity diagrams by using actdiag_
 - nwdiag: embed network diagrams by using nwdiag_
+- requirements: declare requirements wherever you need (e.g. in test
+  docstrings), mark statuses and collect them in a single list 
 
 .. _aafigure: http://docutils.sourceforge.net/sandbox/aafigure/
 
