@@ -3,13 +3,12 @@ Welcome to Sphinx Feed <Test>'s documentation!
 
 Contents:
 
-.. toctree::
+.. latest::
     :maxdepth: 2
+    :glob:
     
-    B_latest
-    A_older
-    C_most_aged
-
+    *
+    
 Indices and tables
 ==================
 

@@ -84,5 +84,20 @@ def test_feed():
     yield assert_equals, links.pop()['href'], base_path + '/A_older.html'
     yield assert_equals, links.pop()['href'], entries[0].link + '#the-latest-blog-post'
     
+    index_path  = os.path.join(app.outdir, 'index.html')
+    soup = BeautifulSoup(open(index_path).read())
+    #latest_tree = soup.find('div', 'toctree-wrapper')
+    #latest_items = soup.findAll('li', 'toctree-l1')
+    #These will look like this:
+    # <div class="toctree-wrapper compound">
+    # <ul>
+    # <li class="toctree-l1"><a class="reference internal" href="B_latest.html">The latest blog post</a></li>
+    # <li class="toctree-l1"><a class="reference internal" href="A_older.html">An older blog post</a></li>
+    # <li class="toctree-l1"><a class="reference internal" href="C_most_aged.html">The oldest blog post</a></li>
+    # </ul>
+    # </div>
+    #yield assert_equals, latest_tree, 'weirdness'
+    # import pdb; pdb.set_trace()
+    
     app.cleanup()
     app2.cleanup()
