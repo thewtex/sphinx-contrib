@@ -1,5 +1,5 @@
-0.9 (in development)
-====================
+0.9 (Aug 31, 2011)
+==================
 
 Incompatible changes
 --------------------
@@ -28,7 +28,7 @@ Other changes
     themes
 
 
-0.8 (2011 Aug, 24)
+0.8 (Aug 24, 2011)
 ==================
 
 Incompatible changes
