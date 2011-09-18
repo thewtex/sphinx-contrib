@@ -1,3 +1,14 @@
+0.5 (in development)
+====================
+
+- :confval:`programoutput_prompt_template` is interpreted as format string now!
+- Require Python 2.6 now
+- Added ``returncode`` option to :rst:dir:`program-output` (thanks to Jan-Marek
+  Glogowski)
+- Warn on unexpected return codes instead of raising
+  :exc:`~subprocess.CalledProcessError`
+
+
 0.4.1 (Mar 11, 2011)
 ====================
 

@@ -23,37 +23,32 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-import os
-import sys
+from __future__ import (print_function, division, unicode_literals,
+                        absolute_import)
 
-doc_directory = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(os.path.normpath(
-    os.path.join(doc_directory, os.pardir, 'sphinxcontrib')))
+import pytest
 
-import programoutput
-
-needs_sphinx = '1.0'
-
-extensions = ['sphinx.ext.intersphinx', 'sphinxcontrib.programoutput']
-
-source_suffix = '.rst'
-master_doc = 'index'
-
-project = u'sphinxcontrib-programoutput'
-copyright = u'2010, 2011, Sebastian Wiesner'
-version = '.'.join(programoutput.__version__.split('.')[:2])
-release = programoutput.__version__
-
-exclude_patterns = ['_build/*']
-
-html_theme = 'default'
-html_static_path = []
-
-intersphinx_mapping = {
-    'python': ('http://docs.python.org', None),
-    'ansi': ('http://packages.python.org/sphinxcontrib-ansi', None)}
+from sphinxcontrib.programoutput import _slice
 
 
-def setup(app):
-    app.add_description_unit('confval', 'confval',
-                             'pair: %s; configuration value')
+def test_slice_simple():
+    assert _slice('2') == (2, None)
+    assert _slice('2,2') == (2, 2)
+
+
+def test_slice_empty():
+    with pytest.raises(ValueError) as exc:
+        assert _slice('')
+    assert str(exc.value) == "invalid literal for int() with base 10: ''"
+
+
+def test_slice_no_int():
+    with pytest.raises(ValueError) as exc:
+        _slice('foo,2')
+    assert str(exc.value) == "invalid literal for int() with base 10: 'foo'"
+
+
+def test_slice_too_many():
+    with pytest.raises(ValueError) as exc:
+        _slice('2,2,2')
+    assert str(exc.value) == 'too many slice parts'
