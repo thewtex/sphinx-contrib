@@ -23,7 +23,6 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-
 """
     sphinxcontrib.programoutput
     ===========================
@@ -38,6 +37,7 @@ from __future__ import (print_function, division, unicode_literals,
                         absolute_import)
 
 import sys
+import os
 import shlex
 from subprocess import Popen, PIPE, STDOUT
 from collections import defaultdict, namedtuple
@@ -47,7 +47,7 @@ from docutils.parsers import rst
 from docutils.parsers.rst.directives import flag, unchanged, nonnegative_int
 
 
-__version__ = '0.6'
+__version__ = '0.8'
 
 
 class program_output(nodes.Element):
@@ -58,7 +58,7 @@ def _slice(value):
     parts = [int(v.strip()) for v in value.split(',')]
     if len(parts) > 2:
         raise ValueError('too many slice parts')
-    return tuple((parts + [None]*2)[:2])
+    return tuple((parts + [None] * 2)[:2])
 
 
 class ProgramOutputDirective(rst.Directive):
@@ -68,9 +68,11 @@ class ProgramOutputDirective(rst.Directive):
 
     option_spec = dict(shell=flag, prompt=flag, nostderr=flag,
                        ellipsis=_slice, extraargs=unchanged,
-                       returncode=nonnegative_int)
+                       returncode=nonnegative_int, cwd=unchanged)
 
     def run(self):
+        env = self.state.document.settings.env
+
         node = program_output()
         node.line = self.lineno
         node['command'] = self.arguments[0]
@@ -82,6 +84,8 @@ class ProgramOutputDirective(rst.Directive):
 
         node['hide_standard_error'] = 'nostderr' in self.options
         node['extraargs'] = self.options.get('extraargs', '')
+        _, cwd = env.relfn2path(self.options.get('cwd', '/'))
+        node['working_directory'] = cwd
         node['use_shell'] = 'shell' in self.options
         node['returncode'] = self.options.get('returncode', 0)
         if 'ellipsis' in self.options:
@@ -89,18 +93,27 @@ class ProgramOutputDirective(rst.Directive):
         return [node]
 
 
-_Command = namedtuple('Command', 'command shell hide_standard_error')
+_Command = namedtuple(
+    'Command', 'command shell hide_standard_error working_directory')
 
 
-class Command(_Command): #pylint: disable=W0232
+class Command(_Command):
     """
     A command to be executed.
     """
 
-    def __new__(cls, command, shell=False, hide_standard_error=False):
+    def __new__(cls, command, shell=False, hide_standard_error=False,
+                working_directory='/'):
         if isinstance(command, list):
             command = tuple(command)
-        return _Command.__new__(cls, command, shell, hide_standard_error)
+        # `chdir()` resolves symlinks, so we need to resolve them too for
+        # caching to make sure that different symlinks to the same directory
+        # don't result in different cache keys.  Also normalize paths to make
+        # sure that identical paths are also equal as strings.
+        working_directory = os.path.normpath(os.path.realpath(
+            working_directory))
+        return _Command.__new__(cls, command, shell, hide_standard_error,
+                                working_directory)
 
     @classmethod
     def from_program_output_node(cls, node):
@@ -109,7 +122,8 @@ class Command(_Command): #pylint: disable=W0232
         """
         extraargs = node.get('extraargs', '')
         command = (node['command'] + ' ' + extraargs).strip()
-        return cls(command, node['use_shell'], node['hide_standard_error'])
+        return cls(command, node['use_shell'],
+                   node['hide_standard_error'], node['working_directory'])
 
     def execute(self):
         """
@@ -118,7 +132,6 @@ class Command(_Command): #pylint: disable=W0232
         Return the :class:`~subprocess.Popen` object representing the running
         command.
         """
-        # pylint: disable=E1101
         if self.shell:
             if sys.version_info[0] < 3 and isinstance(self.command, unicode):
                 command = self.command.encode(sys.getfilesystemencoding())
@@ -126,13 +139,15 @@ class Command(_Command): #pylint: disable=W0232
                 command = self.command
         else:
             if sys.version_info[0] < 3 and isinstance(self.command, unicode):
-                command = shlex.split(self.command.encode(sys.getfilesystemencoding()))
+                command = shlex.split(self.command.encode(
+                    sys.getfilesystemencoding()))
             elif isinstance(self.command, str):
                 command = shlex.split(self.command)
             else:
                 command = self.command
         return Popen(command, shell=self.shell, stdout=PIPE,
-                     stderr=PIPE if self.hide_standard_error else STDOUT)
+                     stderr=PIPE if self.hide_standard_error else STDOUT,
+                     cwd=self.working_directory)
 
     def get_output(self):
         """
@@ -148,13 +163,12 @@ class Command(_Command): #pylint: disable=W0232
         return process.returncode, output
 
     def __str__(self):
-        # pylint: disable=E1101
         if isinstance(self.command, tuple):
             return repr(list(self.command))
         return repr(self.command)
 
 
-class ProgramOutputCache(defaultdict): # pylint: disable=W0232
+class ProgramOutputCache(defaultdict):
     """
     Execute command and cache their output.
 

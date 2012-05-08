@@ -11,6 +11,7 @@
 """
 
 import posixpath
+import re
 import os
 import codecs
 try:
@@ -36,6 +37,18 @@ class BlockdiagError(SphinxError):
 
 
 class Blockdiag(BlockdiagDirective):
+    def run(self):
+        try:
+            return super(Blockdiag, self).run()
+        except diagparser.ParseException, e:
+            if self.content:
+                msg = '[%s] ParseError: %s\n%s' % (self.name, e, "\n".join(self.content))
+            else:
+                msg = '[%s] ParseError: %s\n%r' % (self.name, e, self.arguments[0])
+
+            reporter = self.state.document.reporter
+            return [reporter.warning(msg, line=self.lineno)]
+
     def node2image(self, node, diagram):
         return node
 
@@ -44,7 +57,7 @@ def get_image_filename(self, code, format, options, prefix='blockdiag'):
     """
     Get path of output file.
     """
-    if format not in ('PNG', 'PDF'):
+    if format not in ('PNG', 'PDF', 'SVG'):
         raise BlockdiagError('blockdiag error:\nunknown format: %s\n' % format)
 
     if format == 'PDF':
@@ -108,7 +121,27 @@ def get_fontmap(self):
     return fontmap
 
 
-def create_blockdiag(self, code, format, filename, options, prefix='blockdiag'):
+def get_anchor(self, refid, fromdocname):
+    for docname in self.builder.env.found_docs:
+        doctree = self.builder.env.get_doctree(docname)
+        for target in doctree.traverse(nodes.Targetable):
+            if target.attributes['refid'] == refid:
+                targetfile = self.builder.get_relative_uri(fromdocname, docname)
+                return targetfile + "#" + refid
+
+
+def resolve_reference(self, href, options):
+    if href is None:
+        return
+    pattern = re.compile(u"^:ref:`(.+?)`", re.UNICODE)
+    matched = pattern.search(href)
+    if matched:
+        return get_anchor(self, matched.group(1), options['current_docname'])
+    else:
+        return href
+
+
+def create_blockdiag(self, code, format, filename, options, prefix):
     """
     Render blockdiag code into a PNG output file.
     """
@@ -117,24 +150,84 @@ def create_blockdiag(self, code, format, filename, options, prefix='blockdiag'):
     try:
         tree = diagparser.parse(diagparser.tokenize(code))
         screen = builder.ScreenNodeBuilder.build(tree)
+        for node in screen.traverse_nodes():
+            if node.href:
+                node.href = resolve_reference(self, node.href, options)
 
         antialias = self.builder.config.blockdiag_antialias
-        draw = DiagramDraw.DiagramDraw(format, screen, filename, fontmap=fontmap,
-                                       antialias=antialias)
+        draw = DiagramDraw.DiagramDraw(format, screen, filename,
+                                       fontmap=fontmap, antialias=antialias)
+
     except Exception, e:
         raise BlockdiagError('blockdiag error:\n%s\n' % e)
 
     return draw
 
 
+def make_svgtag(self, image, relfn, trelfn, outfn,
+                alt, thumb_size, image_size):
+    svgtag_format = """<svg xmlns="http://www.w3.org/2000/svg"
+    xmlns:xlink="http://www.w3.org/1999/xlink"
+    alt="%s" width="%s" height="%s">%s
+    </svg>"""
+
+    code = open(outfn, 'r').read().decode('utf-8')
+
+    return (svgtag_format %
+            (alt, image_size[0], image_size[1], code))
+
+
+def make_imgtag(self, image, relfn, trelfn, outfn,
+                alt, thumb_size, image_size):
+    result = ""
+
+    clickable_map = []
+    for n in image.nodes:
+        if n.href:
+            cell = image.metrics.cell(n)
+            clickable_map.append((cell, n.href))
+
+    if clickable_map:
+        imgtag_format = '<img src="%s" alt="%s" width="%s" '
+        imgtag_format += 'usemap="#map_1" height="%s" />\n'  # TODO:mapname
+    else:
+        imgtag_format = '<img src="%s" alt="%s" width="%s" height="%s" />\n'
+
+    if trelfn:
+        result += ('<a href="%s">' % relfn)
+        result += (imgtag_format %
+                   (trelfn, alt, thumb_size[0], thumb_size[1]))
+        result += ('</a>')
+    else:
+        result += (imgtag_format %
+                   (relfn, alt, image_size[0], image_size[1]))
+
+    if clickable_map:
+        result += ('<map name="map_1">')
+        rect_format = '<area shape="rect" coords="%s,%s,%s,%s" href="%s">'
+        for m in clickable_map:
+            x1 = m[0].x1
+            y1 = m[0].y1
+            x2 = m[0].x2
+            y2 = m[0].y2
+            result += (rect_format % (x1, y1, x2, y2, m[1]))
+
+        result += ('</map>')
+
+    return result
+
+
 def render_dot_html(self, node, code, options, prefix='blockdiag',
                     imgcls=None, alt=None):
-    has_thumbnail = False
+    trelfn = None
+    thumb_size = None
     try:
         format = self.builder.config.blockdiag_html_image_format
         relfn, outfn = get_image_filename(self, code, format, options, prefix)
 
+        options['current_docname'] = self.builder.current_docname
         image = create_blockdiag(self, code, format, outfn, options, prefix)
+
         if not os.path.isfile(outfn):
             image.draw()
             image.save()
@@ -142,7 +235,6 @@ def render_dot_html(self, node, code, options, prefix='blockdiag',
         # generate thumbnails
         image_size = image.pagesize()
         if 'maxwidth' in options and options['maxwidth'] < image_size[0]:
-            has_thumbnail = True
             thumb_prefix = prefix + '_thumb'
             trelfn, toutfn = get_image_filename(self, code, format,
                                                 options, thumb_prefix)
@@ -170,15 +262,13 @@ def render_dot_html(self, node, code, options, prefix='blockdiag',
         if alt is None:
             alt = node.get('alt', self.encode(code).strip())
 
-        imgtag_format = '<img src="%s" alt="%s" width="%s" height="%s" />\n'
-        if has_thumbnail:
-            self.body.append('<a href="%s">' % relfn)
-            self.body.append(imgtag_format %
-                             (trelfn, alt, thumb_size[0], thumb_size[1]))
-            self.body.append('</a>')
+        if format == 'SVG':
+            tagfunc = make_svgtag
         else:
-            self.body.append(imgtag_format %
-                             (relfn, alt, image_size[0], image_size[1]))
+            tagfunc = make_imgtag
+
+        self.body.append(tagfunc(self, image, relfn, trelfn, outfn, alt,
+                                 thumb_size, image_size))
 
     self.body.append('</p>\n')
     raise nodes.SkipNode
@@ -215,7 +305,7 @@ def on_doctree_resolved(self, doctree, docname):
     if self.builder.name in ('gettext', 'singlehtml', 'html', 'latex'):
         return
 
-    for node in doctree.traverse(blockdiag):  
+    for node in doctree.traverse(blockdiag):
         code = node['code']
         prefix = 'blockdiag'
         format = 'PNG'

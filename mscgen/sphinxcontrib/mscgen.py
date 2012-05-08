@@ -70,7 +70,13 @@ class MscgenSimple(Directive):
 
 def run_cmd(builder, cmd, cmd_name, cfg_name, stdin=''):
     try:
-        p = Popen(cmd, stdout=PIPE, stdin=PIPE, stderr=PIPE)
+        try:
+            p = Popen(cmd, stdout=PIPE, stdin=PIPE, stderr=PIPE)
+        except OSError, err:
+            # workaround for missing shebang of epstopdf script
+            if err.errno != getattr(errno, 'ENOEXEC', 0):
+                raise
+            p = Popen(cmd, shell=True, stdout=PIPE, stdin=PIPE, stderr=PIPE)
     except OSError, err:
         if err.errno != 2:   # No such file or directory
             raise
@@ -196,7 +202,7 @@ def render_msc_latex(self, node, code, prefix='mscgen'):
         raise nodes.SkipNode
 
     if fname is not None:
-        self.body.append('\\includegraphics[]{%s}' % fname)
+        self.body.append('\n\\includegraphics[]{%s}\n' % fname)
     raise nodes.SkipNode
 
 
