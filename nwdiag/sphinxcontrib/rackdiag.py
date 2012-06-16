@@ -193,7 +193,6 @@ def render_dot_html(self, node, code, options, prefix='rackdiag',
             thumb_size = (options['maxwidth'], image_size[1] * ratio)
             if not os.path.isfile(toutfn):
                 image.filename = toutfn
-                image.draw()
                 image.save(thumb_size)
 
     except UnicodeEncodeError, e:
