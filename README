@@ -72,7 +72,6 @@ List of extensions
 - sdedit: an extension inserting sequence diagram by using Quick Sequence.
   Diagram Editor (sdedit_)
 - seqdiag: embed sequence diagrams by using seqdiag_
-- spelling: Spelling checker using PyEnchant_
 - sword: an extension inserting Bible verses from Sword_.
 - traclinks: create TracLinks_ to a Trac_ instance from within Sphinx
 - youtube: embed videos from YouTube_
