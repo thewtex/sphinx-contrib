@@ -1,1 +1,6 @@
-__version__ = "1.0"
+__all__ = ['autointerface']
+import autointerface
+
+__version__ = "0.2"
+
+

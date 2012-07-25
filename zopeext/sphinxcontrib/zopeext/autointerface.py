@@ -3,31 +3,44 @@
 autointerface
 =============
 
-Sphinx extension that adds an :dir:`autointerface` directive, which can be
-used like autoclass to document zope interfaces.  Interfaces are
-intended to be very different beasts than regular python classes, and
-as a result require customized access to documentation, signatures
-etc.
+This Sphinx extension adds an :rst:dir:`autointerface` directive, which can be
+used like :rst:dir:`sphinx:autoclass` to document zope interfaces.  Interfaces
+are intended to be very different beasts than regular python classes, and as a
+result require customized access to documentation, signatures etc.
 
-`autointerface` directive
------------------------
-The :dir:`autointerface` directive has the same form and option as the
-:dir:`autoclass` directive::
+.. rst:directive:: autointerface
 
-    .. autointerface:: IClass
-       ...
+   The :rst:dir:`autointerface` directive has the same form and option as the
+   :rst:dir:`sphinx:autoclass` directive::
 
-.. seealso:: :mod:`sphinx.ext.autodoc`
+       .. autointerface:: IClass
+          ...
 
-.. note:: This extension also serves as a simple example of using the
-   new sphinx version 6.0 version :mod:`autodoc` refactoring.  Mostly
-   this was straight forward, but I stumbled across a "gotcha":
+   .. seealso:: :mod:`sphinx.ext.autodoc`
 
-   The `objtype` attribute of the documenters needs to be unique.
-   Thus, for example, :attr:`InterfaceMethodDocumenter.objtype`
-   cannot be `'method'` because this would overwrite the entry in
-   :attr:`AutoDirective._registry` used to choose the correct
-   documenter.
+   .. note:: This extension also serves as a simple example of using the sphinx
+      version 0.6 :mod:`sphinx.ext.autodoc` refactoring.  Mostly this was
+      straight forward, but I stumbled across one "gotcha":
+
+      The `objtype` attribute of the documenters needs to be unique.  Thus, for
+      example, :attr:`InterfaceMethodDocumenter.objtype` cannot be `'method'`
+      because this would overwrite the entry in :attr:`AutoDirective._registry`
+      used to choose the correct documenter.
+
+======================
+Implementation Details
+======================
+
+.. autosummary::
+   
+   interface_getattr
+   interface_format_args
+   InterfaceDocumenter
+   InterfaceAttributeDocumenter
+   InterfaceMethodDocumenter
+   InterfaceDirective
+   setup
+
 """
 import sphinx.ext.autodoc
 import sphinx.domains.python
@@ -40,11 +53,11 @@ def interface_getattr(*v):
     """Behaves like `getattr` but for zope Interface objects which
     hide the attributes.
 
-    .. note:: Originally I simply tried to override
-      :meth:`InterfaceDocumenter.special_attrgetter` to deal with the special
-      access needs of :class:`Interface` objects, but found that this is not
-      intended to be overwritten.  Instead one should register the special
-      accessor using :func:`app.add_autodoc_attrgetter`.
+    .. note:: Originally I simply tried to 
+       override :meth:`InterfaceDocumenter.special_attrgetter` to deal with the
+       special access needs of :class:`Interface` objects, but found that this
+       is not intended to be overwritten.  Instead one should register the
+       special accessor using :func:`app.add_autodoc_attrgetter`. 
     """
     obj, name = v[:2]
     if "__dict__" == name:
