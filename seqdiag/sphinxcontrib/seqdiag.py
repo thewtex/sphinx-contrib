@@ -56,10 +56,10 @@ def get_image_filename(self, code, format, options, prefix='seqdiag'):
     """
     Get path of output file.
     """
-    if format not in ('PNG', 'PDF', 'SVG'):
+    if format.upper() not in ('PNG', 'PDF', 'SVG'):
         raise SeqdiagError('seqdiag error:\nunknown format: %s\n' % format)
 
-    if format == 'PDF':
+    if format.upper() == 'PDF':
         try:
             import reportlab
         except ImportError:
@@ -211,7 +211,7 @@ def render_dot_html(self, node, code, options, prefix='seqdiag',
         if alt is None:
             alt = node.get('alt', self.encode(code).strip())
 
-        if format == 'SVG':
+        if format.upper() == 'SVG':
             tagfunc = make_svgtag
         else:
             tagfunc = make_imgtag
