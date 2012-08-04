@@ -35,7 +35,7 @@ to their author as given in the module.
 List of extensions
 ==================
 .. Note that this will be viewed using the bitbucket web interface ..
-.. which does not support the full sphinx markup like. ..
+.. which supports a subset, but not the full sphinx markup. ..
 
 - aafig: render embeded ASCII art as nice images using aafigure_.
 - actdiag: embed activity diagrams by using actdiag_
@@ -47,7 +47,6 @@ List of extensions
 - coffeedomain: a domain for (auto)documenting CoffeeScript source code.
 - context: a builder for ConTeXt.
 - doxylink: Link to external Doxygen-generated HTML documentation
-- epydoc: cross-reference eypdoc generated documentation
 - erlangdomain: an extension for Erlang support (Sphinx 1.0 needed)
 - exceltable: embed Excel spreadsheets into documents using exceltable_
 - feed: an extension for creating syndication feeds and time-based overviews
@@ -57,7 +56,6 @@ List of extensions
 - googlechart: embed charts by using Google Chart_
 - httpdomain: a domain for documenting RESTful HTTP APIs.
 - hyphenator: client-side hyphenation of HTML using hyphenator_
-- issuetracker: link to different issue trackers
 - lilypond: an extension inserting music scripts from Lilypond_ in PNG format.
 - mscgen: embed mscgen-formatted MSC (Message Sequence Chart)s.
 - nicoviceo: embed videos from nicovideo
@@ -66,7 +64,7 @@ List of extensions
 - osaka: convert standard Japanese doc to Osaka dialect (it is joke extension)
 - paverutils: an alternate integration of Sphinx with Paver_.
 - plantuml: embed UML diagram by using PlantUML_
-- programoutput: include output of programs into documentation
+- rawfiles: copy raw files, like a CNAME.
 - requirements: declare requirements wherever you need (e.g. in test
   docstrings), mark statuses and collect them in a single list
 - rubydomain: an extension for Ruby support (Sphinx 1.0 needed)
@@ -74,11 +72,10 @@ List of extensions
 - sdedit: an extension inserting sequence diagram by using Quick Sequence.
   Diagram Editor (sdedit_)
 - seqdiag: embed sequence diagrams by using seqdiag_
-- spelling: Spelling checker using PyEnchant_
 - sword: an extension inserting Bible verses from Sword_.
 - traclinks: create TracLinks_ to a Trac_ instance from within Sphinx
 - youtube: embed videos from YouTube_
-- zopeext: provide an ``autointerface`` directive for using Zope interfaces.
+- zopeext: provide an ``autointerface`` directive for using `Zope interfaces`_.
 - clearquest: create tables from ClearQuest_ queries.
 
 .. _aafigure: https://launchpad.net/aafigure
@@ -122,6 +119,8 @@ List of extensions
 .. _YouTube: http://www.youtube.com/
 
 .. _ClearQuest: http://www-01.ibm.com/software/awdtools/clearquest/
+
+.. _Zope interfaces: http://docs.zope.org/zope.interface/README.html
 
 For contributors
 ================

@@ -45,19 +45,10 @@ zopeext:
 googleanalytics:
    Domen Kožar <domen@dev.si>
 
-issuetracker:
-   Sebastian Wiesner <lunaryorn@googlemail.com>
-
-epydoc:
-   Sebastian Wiesner <lunaryorn@googlemail.com>
-
 doxylink
    Matt Williams <matt@milliams.com>
 
 ansi:
-   Sebastian Wiesner <lunaryorn@googlemail.com>
-
-programoutput:
    Sebastian Wiesner <lunaryorn@googlemail.com>
 
 cheeseshop:
@@ -105,3 +96,6 @@ clearquest:
 
 sqltable:
    Doug Hellmann <doug.hellmann@gmail.com>
+
+rawfiles:
+   Takumi IINO <trot.thunder@gmail.com>

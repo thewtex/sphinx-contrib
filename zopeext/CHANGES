@@ -1,0 +1,19 @@
+.. -*- restructuredtext -*-
+
+This file describes user-visible changes between the extension versions.
+
+Version 0.2 (2012-07-24)
+========================
+
+* Added website__.
+* Added documentation.
+* Added to PyPi.
+* Added example.py
+
+__ http://packages.python.org/sphinxcontrib-zopeext/
+
+Version 0.1 (2010-05-20)
+========================
+
+* Initial version.
+
