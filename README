@@ -72,6 +72,7 @@ List of extensions
 - sdedit: an extension inserting sequence diagram by using Quick Sequence.
   Diagram Editor (sdedit_)
 - seqdiag: embed sequence diagrams by using seqdiag_
+- slide: embed presentation slides on slideshare_ and other sites.
 - sword: an extension inserting Bible verses from Sword_.
 - traclinks: create TracLinks_ to a Trac_ instance from within Sphinx
 - youtube: embed videos from YouTube_
@@ -121,6 +122,8 @@ List of extensions
 .. _ClearQuest: http://www-01.ibm.com/software/awdtools/clearquest/
 
 .. _Zope interfaces: http://docs.zope.org/zope.interface/README.html
+
+.. _slideshare: http://www.slideshare.net/
 
 For contributors
 ================
