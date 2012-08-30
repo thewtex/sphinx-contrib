@@ -54,6 +54,7 @@ List of extensions
 - gnuplot: produces images using gnuplot_ language.
 - googleanalytics: track html visitors statistics
 - googlechart: embed charts by using Google Chart_
+- googlemaps: embed maps by using Google Maps_
 - httpdomain: a domain for documenting RESTful HTTP APIs.
 - hyphenator: client-side hyphenation of HTML using hyphenator_
 - lilypond: an extension inserting music scripts from Lilypond_ in PNG format.
@@ -112,6 +113,8 @@ List of extensions
 .. _nwdiag: http://blockdiag.com/
 
 .. _Google Chart: http://code.google.com/intl/ja/apis/chart/
+
+.. _Google Maps: http://maps.google.com/
 
 .. _hyphenator: http://code.google.com/p/hyphenator/
 
