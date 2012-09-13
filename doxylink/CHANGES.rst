@@ -1,3 +1,8 @@
+1.3 (Sep 13, 2012)
+====================
+
+- Add fix from Matthias Tuma from Shark3 to allow friend declarations inside classes.
+
 1.2 (Nov 3, 2011)
 ====================
 
