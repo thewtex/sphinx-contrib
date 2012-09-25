@@ -25,7 +25,7 @@ from sphinx.errors import SphinxError
 from sphinx.util.osutil import ensuredir, ENOENT, EPIPE
 from sphinx.util.compat import Directive
 
-from nwdiag_sphinxhelper import command, diagparser, builder, DiagramDraw
+from nwdiag_sphinxhelper import command, parser, builder, drawer
 from nwdiag_sphinxhelper import collections, FontMap
 from nwdiag_sphinxhelper import nwdiag, NwdiagDirective
 namedtuple = collections.namedtuple
@@ -39,7 +39,7 @@ class Nwdiag(NwdiagDirective):
     def run(self):
         try:
             return super(Nwdiag, self).run()
-        except diagparser.ParseException, e:
+        except parser.ParseException, e:
             if self.content:
                 msg = '[%s] ParseError: %s\n%s' % (self.name, e, "\n".join(self.content))
             else:
@@ -127,12 +127,12 @@ def create_nwdiag(self, code, format, filename, options, prefix='nwdiag'):
     draw = None
     fontmap = get_fontmap(self)
     try:
-        tree = diagparser.parse(diagparser.tokenize(code))
+        tree = parser.parse_string(code)
         screen = builder.ScreenNodeBuilder.build(tree)
 
         antialias = self.builder.config.nwdiag_antialias
-        draw = DiagramDraw.DiagramDraw(format, screen, filename,
-                                       fontmap=fontmap, antialias=antialias)
+        draw = drawer.DiagramDraw(format, screen, filename,
+                                  fontmap=fontmap, antialias=antialias)
     except Exception, e:
         raise NwdiagError('nwdiag error:\n%s\n' % e)
 

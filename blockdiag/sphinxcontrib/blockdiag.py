@@ -26,7 +26,7 @@ from sphinx.errors import SphinxError
 from sphinx.util.osutil import ensuredir, ENOENT, EPIPE
 from sphinx.util.compat import Directive
 
-from blockdiag_sphinxhelper import command, diagparser, builder, DiagramDraw
+from blockdiag_sphinxhelper import command, parser, builder, drawer
 from blockdiag_sphinxhelper import collections, FontMap
 from blockdiag_sphinxhelper import blockdiag, BlockdiagDirective
 namedtuple = collections.namedtuple
@@ -40,7 +40,7 @@ class Blockdiag(BlockdiagDirective):
     def run(self):
         try:
             return super(Blockdiag, self).run()
-        except diagparser.ParseException, e:
+        except parser.ParseException, e:
             if self.content:
                 msg = '[%s] ParseError: %s\n%s' % (self.name, e, "\n".join(self.content))
             else:
@@ -148,15 +148,15 @@ def create_blockdiag(self, code, format, filename, options, prefix):
     draw = None
     fontmap = get_fontmap(self)
     try:
-        tree = diagparser.parse(diagparser.tokenize(code))
+        tree = parser.parse_string(code)
         screen = builder.ScreenNodeBuilder.build(tree)
         for node in screen.traverse_nodes():
             if node.href:
                 node.href = resolve_reference(self, node.href, options)
 
         antialias = self.builder.config.blockdiag_antialias
-        draw = DiagramDraw.DiagramDraw(format, screen, filename,
-                                       fontmap=fontmap, antialias=antialias)
+        draw = drawer.DiagramDraw(format, screen, filename,
+                                  fontmap=fontmap, antialias=antialias)
 
     except Exception, e:
         raise BlockdiagError('blockdiag error:\n%s\n' % e)

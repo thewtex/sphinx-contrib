@@ -26,7 +26,7 @@ from sphinx.errors import SphinxError
 from sphinx.util.osutil import ensuredir, ENOENT, EPIPE
 from sphinx.util.compat import Directive
 
-from actdiag_sphinxhelper import command, diagparser, builder, DiagramDraw
+from actdiag_sphinxhelper import command, parser, builder, drawer
 from actdiag_sphinxhelper import collections, FontMap
 from actdiag_sphinxhelper import actdiag, ActdiagDirective
 namedtuple = collections.namedtuple
@@ -40,7 +40,7 @@ class Actdiag(ActdiagDirective):
     def run(self):
         try:
             return super(Actdiag, self).run()
-        except diagparser.ParseException, e:
+        except parser.ParseException, e:
             if self.content:
                 msg = '[%s] ParseError: %s\n%s' % (self.name, e, "\n".join(self.content))
             else:
@@ -148,7 +148,7 @@ def create_actdiag(self, code, format, filename, options, prefix='actdiag'):
     draw = None
     fontmap = get_fontmap(self)
     try:
-        tree = diagparser.parse(diagparser.tokenize(code))
+        tree = parser.parse_string(code)
         screen = builder.ScreenNodeBuilder.build(tree)
 
         for lane in screen.lanes:
@@ -159,8 +159,8 @@ def create_actdiag(self, code, format, filename, options, prefix='actdiag'):
                 node.href = resolve_reference(self, node.href, options)
 
         antialias = self.builder.config.actdiag_antialias
-        draw = DiagramDraw.DiagramDraw(format, screen, filename,
-                                       fontmap=fontmap, antialias=antialias)
+        draw = drawer.DiagramDraw(format, screen, filename,
+                                  fontmap=fontmap, antialias=antialias)
     except Exception, e:
         raise ActdiagError('actdiag error:\n%s\n' % e)
 
