@@ -125,7 +125,7 @@ def get_anchor(self, refid, fromdocname):
     for docname in self.builder.env.found_docs:
         doctree = self.builder.env.get_doctree(docname)
         for target in doctree.traverse(nodes.Targetable):
-            if target.attributes['refid'] == refid:
+            if target.attributes.get('refid') == refid:
                 targetfile = self.builder.get_relative_uri(fromdocname, docname)
                 return targetfile + "#" + refid
 
