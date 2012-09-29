@@ -189,7 +189,7 @@ def make_imgtag(self, image, relfn, trelfn, outfn,
 
     if clickable_map:
         imgtag_format = '<img src="%s" alt="%s" width="%s" '
-        imgtag_format += 'usemap="#map_1" height="%s" />\n'  # TODO:mapname
+        imgtag_format += 'usemap="#map_%d" height="%%s" />\n' % id(image)
     else:
         imgtag_format = '<img src="%s" alt="%s" width="%s" height="%s" />\n'
 
@@ -203,7 +203,7 @@ def make_imgtag(self, image, relfn, trelfn, outfn,
                    (relfn, alt, image_size[0], image_size[1]))
 
     if clickable_map:
-        result += ('<map name="map_1">')
+        result += ('<map name="map_%d">' % id(image))
         rect_format = '<area shape="rect" coords="%s,%s,%s,%s" href="%s">'
         for m in clickable_map:
             x1 = m[0].x1
