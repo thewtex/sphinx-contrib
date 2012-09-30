@@ -18,17 +18,32 @@ Welcome to SWF Sphinx Extension's documentation!
 
    You may pass any parameter, which is found at `Flash Help Page`_.
 
-   .. _Flash Help Page::
+   .. _Flash Help Page:
       http://helpx.adobe.com/flash/kb/flash-object-embed-tag-attributes.html
 
    Apart from this you can pass `class`, `width`, `height` or `zoom-to-fit`.
 
    There are sometimes flashvideos, where you do not know the exact size.
    For this issue there is `zoom-to-fit` parameter, which will zoom out/in the
-   video to fit into your rectangle specified by `width` and `height`.
+   video to fit into your rectangle specified by `width` and `height`::
 
        .. swf:: path/to/some.swf
           :width: 400
           :height: 300
           :zoom-to-fit: true
 
+.. confval:: swf_zoom_to_fit_default
+
+   Default is "yes", may also be "no"
+
+.. confval:: swf_allowfullscreen_default
+
+   Default is "yes", may also be "no"
+
+.. confval:: swf_width_default
+
+   Default is "400"
+
+.. confval:: swf_height_default
+
+   Default is "300"
