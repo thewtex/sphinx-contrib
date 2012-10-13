@@ -23,8 +23,8 @@ First you must add the extension to your list of extensions in conf.py::
 
   extensions = ['sphinx.ext.autodoc', 'sphinxcontrib.coffeedomain']
 
-Because Python has no clue about where your sources are, you must tell it
-where to look in your conf.py like so::
+Because Python has no clue about where your CoffeeScript sources are located,
+you must tell it where to look in your conf.py like so::
 
   coffee_src_dir = os.path.abspath('../')
 
@@ -60,4 +60,3 @@ You can document entire modules easily with ``automodule``:
 .. sourcecode:: rst
 
   .. automodule:: mymodule
-    :members:
