@@ -6,10 +6,11 @@ from sphinx.roles import XRefRole
 from sphinx.domains import Domain, ObjType
 from sphinx.domains.python import _pseudo_parse_arglist
 from sphinx.locale import l_, _
-from sphinx.util.docfields import TypedField, GroupedField
+from sphinx.util.docfields import GroupedField
 from sphinx.util.nodes import make_refnode
 
 MOD_SEP = '::'
+
 
 class CoffeeObj(ObjectDescription):
     doc_field_types = [
@@ -21,7 +22,7 @@ class CoffeeObj(ObjectDescription):
         if self.display_prefix:
             signode += addnodes.desc_annotation(self.display_prefix, self.display_prefix)
 
-        fullname, _, args = sig.partition('(')
+        fullname, paren, args = sig.partition('(')
         modname, name = fullname.split(MOD_SEP)
         classname = self.env.temp_data.get('autodoc:class')
         if classname and name.startswith(classname):
@@ -33,7 +34,7 @@ class CoffeeObj(ObjectDescription):
         return fullname
 
     def add_target_and_index(self, fqn, sig, signode):
-        doc = self.state.document
+        #doc = self.state.document
         if fqn not in self.state.document.ids:
             signode['names'].append(fqn)
             signode['ids'].append(fqn)
@@ -72,6 +73,7 @@ class CoffeeModule(Directive):
                                          'module-' + modname, '')])
         return [targetnode, inode]
 
+
 class CoffeeClass(CoffeeObj):
     option_spec = {
         'module': directives.unchanged,
@@ -102,6 +104,7 @@ class CoffeeClass(CoffeeObj):
 
         return fullname
 
+
 class CoffeeFunction(CoffeeObj):
     option_spec = {
         'module': directives.unchanged,
@@ -125,6 +128,7 @@ class CoffeeStaticMethod(CoffeeFunction):
     }
 
     display_prefix = 'static method '
+
 
 class CoffeeXRefRole(XRefRole):
     def process_link(self, env, refnode, has_explicit_title, title, target):
@@ -154,10 +158,10 @@ class CoffeeDomain(Domain):
     }
 
     roles = {
-       'mod': CoffeeXRefRole(),
-       'meth': CoffeeXRefRole(),
-       'class': CoffeeXRefRole(),
-       'func': CoffeeXRefRole(),
+        'mod': CoffeeXRefRole(),
+        'meth': CoffeeXRefRole(),
+        'class': CoffeeXRefRole(),
+        'func': CoffeeXRefRole(),
     }
 
     data_version = 1

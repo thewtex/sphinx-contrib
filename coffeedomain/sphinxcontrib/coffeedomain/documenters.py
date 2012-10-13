@@ -4,8 +4,9 @@ from subprocess import Popen, PIPE
 import os.path
 import json
 import re
- 
+
 from .domain import MOD_SEP
+
 
 class StubObject(object):
     """
@@ -35,6 +36,7 @@ class StubObject(object):
     def __repr__(self):
         return "<StubObject for %s %s>" % (self.type, self['name'])
 
+
 class CoffeedocDocumenter(Documenter):
     """
     Base class for documenters that use the output of ``coffeedoc``
@@ -59,7 +61,7 @@ class CoffeedocDocumenter(Documenter):
         self.args = None
         self.retann = None
         return True
-            
+
     def format_name(self):
         return self.modname + MOD_SEP + '.'.join(self.objpath)
 
@@ -72,7 +74,7 @@ class CoffeedocDocumenter(Documenter):
 
     @property
     def coffeedoc_module(self):
-        filename= self.modname + '.coffee'
+        filename = self.modname + '.coffee'
         return self._load_module(filename)
 
     def _load_module(self, filename):
@@ -80,20 +82,21 @@ class CoffeedocDocumenter(Documenter):
         if filename in modules:
             return modules[filename]
         basedir = self.env.config.coffee_src_dir
-        parser  = self.env.config.coffee_src_parser or 'commonjs'
+        parser = self.env.config.coffee_src_parser or 'commonjs'
 
         gencmd = ['coffeedoc', '--stdout', '--renderer', 'json', '--parser',
                   parser, filename]
-        docgen = Popen(gencmd, cwd=basedir, stdout=PIPE, shell=True)
+        docgen = Popen(gencmd, cwd=basedir, stdout=PIPE)
         (stdout, stderr) = docgen.communicate()
         data = json.loads(stdout)[0]
-        data['path'] = data['path'].replace(basedir+'/', '')
+        data['path'] = data['path'].replace(basedir + '/', '')
         data['name'] = data['path'].replace('.coffee', MOD_SEP)
         modules[filename] = StubObject('module', data)
         return modules[filename]
 
     def import_object(self):
         raise NotImplemented("")
+
 
 class ModuleDocumenter(CoffeedocDocumenter, PyModuleDocumenter):
     objtype = 'module'
@@ -104,8 +107,9 @@ class ModuleDocumenter(CoffeedocDocumenter, PyModuleDocumenter):
     documents_type = 'module'
     sub_member_keys = ('classes', 'functions')
 
-    option_spec =  {
-        'show-dependencies': bool_option
+    option_spec = {
+        'show-dependencies': bool_option,
+        'members': members_option
     }
 
     def import_object(self):
@@ -130,6 +134,7 @@ class ModuleDocumenter(CoffeedocDocumenter, PyModuleDocumenter):
                 self.add_line('  * ``%s = require "%s"``' % (localname, module),
                               '<autodoc>')
 
+
 class SubMember(object):
     option_spec = {
         'members': members_option
@@ -152,9 +157,11 @@ class SubMember(object):
                 return True
         return False
 
+
 class ModuleMember(SubMember):
     def find_parent_object(self):
         return self.coffeedoc_module
+
 
 class ClassMember(SubMember):
     def find_parent_object(self):
@@ -163,6 +170,7 @@ class ClassMember(SubMember):
             cpath = data['name'].split('.')
             if cpath == self.objpath[:len(cpath)]:
                 return data
+
 
 class ClassDocumenter(ModuleMember, CoffeedocDocumenter):
     objtype = 'class'
@@ -210,9 +218,11 @@ class CodeDocumenter(CoffeedocDocumenter):
     def format_signature(self):
         return '(%s)' % ', '.join(self.object['params'])
 
+
 class FunctionDocumenter(ModuleMember, CodeDocumenter):
     objtype = 'function'
     documents_type = 'functions'
+
 
 class MethodDocumenter(ClassMember, CodeDocumenter):
     objtype = 'method'
@@ -222,6 +232,7 @@ class MethodDocumenter(ClassMember, CodeDocumenter):
     def can_document_member(cls, member, membername, isattr, parent):
         if isinstance(member, StubObject) and member.type == cls.documents_type:
             return True
+
 
 class StaticMethodDocumenter(ClassMember, CodeDocumenter):
     objtype = 'staticmethod'
