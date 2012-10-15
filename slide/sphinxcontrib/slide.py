@@ -48,6 +48,8 @@ def get_slide_options(url):
         return get_slide_options_for_googledocs(url)
     elif re.match('http://www.slideshare.net/', url):
         return get_slide_options_for_slideshare(url)
+    elif re.match('https://speakerdeck.com/', url):
+        return get_slide_options_for_speakerdeck(url)
     else:
         msg = 'unknown slide URL: %s' % url
         raise Exception(msg)
@@ -90,6 +92,26 @@ def get_slide_options_for_slideshare(url):
     return options
 
 
+def get_slide_options_for_speakerdeck(url):
+    options = {}
+    options['type'] = 'speakerdeck'
+
+    content = urllib2.urlopen(url).read()
+    matched = re.search('<h1>(.*?)</h1>', content)
+    if matched:
+        options['title'] = matched.group(1).decode('utf-8')
+
+    matched = re.search('data-id="(.*?)"', content)
+    if matched:
+        options['data_id'] = matched.group(1).decode('utf-8')
+
+    matched = re.search('data-ratio="(.*?)"', content)
+    if matched:
+        options['data_ratio'] = matched.group(1).decode('utf-8')
+
+    return options
+
+
 def html_visit_slide_node(self, node):
     options = node['slide_options']
 
@@ -104,6 +126,9 @@ def html_visit_slide_node(self, node):
                                      options.get('title', ""),
                                      options.get('author_url'),
                                      options.get('author_name', "")))
+    elif options['type'] == 'speakerdeck':
+        template = """<script async class="speakerdeck-embed" data-id="%s" data-ratio="%s" src="//speakerdeck.com/assets/embed.js"></script>"""
+        self.body.append(template % (options.get('data_id'), options.get('data_ratio')))
 
 
 def latex_visit_slide_node(self, node):
