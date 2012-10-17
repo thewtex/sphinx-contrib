@@ -28,7 +28,7 @@ Following code is sample::
 This module needs actdiag_.
 '''
 
-requires = ['actdiag>=0.3.0', 'Sphinx>=0.6']
+requires = ['actdiag>=0.3.0', 'Sphinx>=0.6', 'setuptools']
 
 setup(
     name='sphinxcontrib-actdiag',

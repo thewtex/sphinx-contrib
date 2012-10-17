@@ -42,7 +42,7 @@ And insert rack structure diagrams::
 This module needs nwdiag_.
 '''
 
-requires = ['nwdiag>=0.8.1', 'Sphinx>=0.6']
+requires = ['nwdiag>=0.8.1', 'Sphinx>=0.6', 'setuptools']
 
 setup(
     name='sphinxcontrib-nwdiag',
