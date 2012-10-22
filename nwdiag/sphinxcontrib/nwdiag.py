@@ -13,6 +13,7 @@
 import posixpath
 import os
 import codecs
+import traceback
 try:
     from hashlib import sha1 as sha
 except ImportError:
@@ -134,6 +135,9 @@ def create_nwdiag(self, code, format, filename, options, prefix='nwdiag'):
         draw = drawer.DiagramDraw(format, screen, filename,
                                   fontmap=fontmap, antialias=antialias)
     except Exception, e:
+        if self.builder.config.nwdiag_debug:
+            traceback.print_exc()
+
         raise NwdiagError('nwdiag error:\n%s\n' % e)
 
     return draw
@@ -279,6 +283,7 @@ def setup(app):
     app.add_config_value('nwdiag_fontpath', None, 'html')
     app.add_config_value('nwdiag_fontmap', None, 'html')
     app.add_config_value('nwdiag_antialias', False, 'html')
+    app.add_config_value('nwdiag_debug', False, 'html')
     app.add_config_value('nwdiag_html_image_format', 'PNG', 'html')
     app.add_config_value('nwdiag_tex_image_format', 'PNG', 'html')
     app.connect("doctree-resolved", on_doctree_resolved)

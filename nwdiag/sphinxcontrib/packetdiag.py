@@ -13,6 +13,7 @@
 import posixpath
 import os
 import codecs
+import traceback
 try:
     from hashlib import sha1 as sha
 except ImportError:
@@ -134,6 +135,9 @@ def create_packetdiag(self, code, format, filename, options, prefix='packetdiag'
         draw = drawer.DiagramDraw(format, screen, filename,
                                   fontmap=fontmap, antialias=antialias)
     except Exception, e:
+        if self.builder.config.packetdiag_debug:
+            traceback.print_exc()
+
         raise PacketdiagError('packetdiag error:\n%s\n' % e)
 
     return draw
@@ -279,6 +283,7 @@ def setup(app):
     app.add_config_value('packetdiag_fontpath', None, 'html')
     app.add_config_value('packetdiag_fontmap', None, 'html')
     app.add_config_value('packetdiag_antialias', False, 'html')
+    app.add_config_value('packetdiag_debug', False, 'html')
     app.add_config_value('packetdiag_html_image_format', 'PNG', 'html')
     app.add_config_value('packetdiag_tex_image_format', 'PNG', 'html')
     app.connect("doctree-resolved", on_doctree_resolved)

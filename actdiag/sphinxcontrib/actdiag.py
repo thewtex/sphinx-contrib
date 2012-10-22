@@ -14,6 +14,7 @@ import posixpath
 import re
 import os
 import codecs
+import traceback
 try:
     from hashlib import sha1 as sha
 except ImportError:
@@ -162,6 +163,9 @@ def create_actdiag(self, code, format, filename, options, prefix='actdiag'):
         draw = drawer.DiagramDraw(format, screen, filename,
                                   fontmap=fontmap, antialias=antialias)
     except Exception, e:
+        if self.builder.config.actdiag_debug:
+            traceback.print_exc()
+
         raise ActdiagError('actdiag error:\n%s\n' % e)
 
     return draw
@@ -335,6 +339,7 @@ def setup(app):
     app.add_config_value('actdiag_fontpath', None, 'html')
     app.add_config_value('actdiag_fontmap', None, 'html')
     app.add_config_value('actdiag_antialias', False, 'html')
+    app.add_config_value('actdiag_debug', False, 'html')
     app.add_config_value('actdiag_html_image_format', 'PNG', 'html')
     app.add_config_value('actdiag_tex_image_format', 'PNG', 'html')
     app.connect("doctree-resolved", on_doctree_resolved)
