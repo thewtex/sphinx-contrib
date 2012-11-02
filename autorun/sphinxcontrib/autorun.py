@@ -72,7 +72,7 @@ class RunBlock(Directive):
         # Process output 
         if stdout:
             out = ''.join(stdout).decode(output_encoding)
-        else:
+        if stderr:
             out = ''.join(stderr).decode(output_encoding)
         
         # Get the original code with prefixes
