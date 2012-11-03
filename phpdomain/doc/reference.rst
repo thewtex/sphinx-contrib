@@ -45,6 +45,11 @@ Each directive populates the index, and or the namespace index.
    Describe an interface.  Methods and constants belonging to the interface 
    should follow or be nested inside this directive.
 
+.. rst:directive:: .. php:trait:: name
+
+   Describe a trait.  Methods beloning to the trait should follow or be nested
+   inside this directive.
+
 .. rst:directive:: .. php:class:: name
 
    Describes a class.  Methods, attributes, and constants belonging to the class
@@ -136,7 +141,8 @@ matching directive is found:
 
 .. rst:role:: php:meth
 
-   Reference a method of a class. This role supports both kinds of methods::
+   Reference a method of a class/interface/trait. This role supports
+   both kinds of methods::
    
      :php:meth:`DateTime::setDate`
      :php:meth:`Classname::staticMethod`
@@ -154,3 +160,8 @@ matching directive is found:
 .. rst:role:: php:interface
 
    Reference an interface.  A namespaced name may be used.
+
+.. rst:role:: php:trait
+
+   Reference a trait. A namespaced name may be used.
+
