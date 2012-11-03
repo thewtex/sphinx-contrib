@@ -14,6 +14,7 @@ import posixpath
 import re
 import os
 import codecs
+import traceback
 try:
     from hashlib import sha1 as sha
 except ImportError:
@@ -159,6 +160,9 @@ def create_blockdiag(self, code, format, filename, options, prefix):
                                   fontmap=fontmap, antialias=antialias)
 
     except Exception, e:
+        if self.builder.config.blockdiag_debug:
+            traceback.print_exc()
+
         raise BlockdiagError('blockdiag error:\n%s\n' % e)
 
     return draw
@@ -329,6 +333,7 @@ def setup(app):
     app.add_config_value('blockdiag_fontpath', None, 'html')
     app.add_config_value('blockdiag_fontmap', None, 'html')
     app.add_config_value('blockdiag_antialias', False, 'html')
+    app.add_config_value('blockdiag_debug', False, 'html')
     app.add_config_value('blockdiag_html_image_format', 'PNG', 'html')
     app.add_config_value('blockdiag_tex_image_format', 'PNG', 'html')
     app.connect("doctree-resolved", on_doctree_resolved)

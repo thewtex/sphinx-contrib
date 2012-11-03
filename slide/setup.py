@@ -14,7 +14,7 @@ Following code is sample::
 .. _slideshare: http://www.slideshare.net/
 '''
 
-requires = ['Sphinx>=0.6']
+requires = ['Sphinx>=0.6', 'setuptools']
 
 setup(
     name='sphinxcontrib-slide',

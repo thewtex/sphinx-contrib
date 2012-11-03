@@ -8,7 +8,7 @@ This package contains the nicovideo Sphinx extension.
 .. add description here ..
 '''
 
-requires = ['Sphinx>=0.6']
+requires = ['Sphinx>=0.6', 'setuptools']
 
 setup(
     name='sphinxcontrib-nicovideo',

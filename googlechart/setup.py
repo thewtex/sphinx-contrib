@@ -23,7 +23,7 @@ This module needs internet connection.
 
 '''
 
-requires = ['Sphinx>=0.6', 'funcparserlib']
+requires = ['Sphinx>=0.6', 'funcparserlib', 'setuptools']
 
 setup(
     name='sphinxcontrib-googlechart',

@@ -14,7 +14,7 @@ Following code is sample::
 .. _Google Maps: http://maps.google.com/
 '''
 
-requires = ['Sphinx>=0.6']
+requires = ['Sphinx>=0.6', 'setuptools']
 
 setup(
     name='sphinxcontrib-googlemaps',
