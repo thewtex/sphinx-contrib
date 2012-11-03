@@ -118,6 +118,16 @@ Interfaces
 
     Another interface
 
+Traits
+======
+
+.. php:trait:: LogTrait
+
+    A logging trait
+
+    .. php:method:: log($level, $string)
+
+        A method description.
 
 More globals after classes
 ==========================
@@ -175,6 +185,10 @@ Test Case - Global symbols with no namespaces
 :php:func:`DateTimeInterface::$testattr`
 
 :php:func:`OtherInterface`
+
+:php:trait:`LogTrait`
+
+:php:func:`LogTrait::log()`
 
 .. php:namespace:: LibraryName
 
@@ -247,6 +261,13 @@ Namespaced elements
 
     An instance method
 
+.. php:trait:: TemplateTrait
+
+    A trait in a namespace
+
+    .. php:method:: render($template)
+
+    Render a template.
 
 
 Test Case - not including namespace
@@ -285,6 +306,12 @@ Test Case - not including namespace
 :php:func:`LibraryInterface::instanceMethod`
 
 :php:exc:`NamespaceException`
+
+:php:trait:`TemplateTrait`
+
+:php:trait:`LibraryName\\TemplateTrait`
+
+:php:func:`LibraryName\\TemplateTrait::render()`
 
 Test Case - global access
 -------------------------
