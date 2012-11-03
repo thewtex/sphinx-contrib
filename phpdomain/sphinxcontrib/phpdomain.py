@@ -39,9 +39,17 @@ php_paramlist_re = re.compile(r'([\[\],])')  # split at '[', ']' and ','
 NS = '\\'
 
 separators = {
-  'method':'::', 'function':NS, 'class':NS, 'namespace':NS,
-  'global':'', 'const':'::', 'attr': '::$', 'exception': '',
-  'staticmethod':'::', 'interface':NS
+  'method': '::',
+  'function': NS,
+  'class': NS,
+  'namespace': NS,
+  'global': '',
+  'const': '::',
+  'attr': '::$',
+  'exception': '',
+  'staticmethod': '::',
+  'interface': NS,
+  'trait': NS
 }
 
 php_separator = re.compile(r"(\w+)?(?:[:]{2})?")
@@ -134,10 +142,10 @@ class PhpObject(ObjectDescription):
                 fullname = name_prefix + name
 
             # Currently in a class, but not creating another class,
-            elif classname and not self.objtype in ['class', 'exception', 'interface']:
+            elif classname and not self.objtype in ['class', 'exception', 'interface', 'trait']:
                 if not self.env.temp_data['php:in_class']:
                     name_prefix = classname + separator
-                
+
                 fullname = classname + separator + name
             else:
                 classname = ''
@@ -295,7 +303,8 @@ class PhpNamespacelevel(PhpObject):
 
 class PhpClasslike(PhpObject):
     """
-    Description of a class-like object (classes, exceptions).
+    Description of a class-like object
+    (classes, exceptions, interfaces, traits).
     """
 
     def get_signature_prefix(self, sig):
@@ -310,6 +319,10 @@ class PhpClasslike(PhpObject):
             if not modname:
                 return _('%s (interface)') % name_cls[0]
             return _('%s (interface in %s)') % (name_cls[0], modname)
+        elif self.objtype == 'trait':
+            if not modname:
+                return _('%s (trait)') % name_cls[0]
+            return _('%s (trait in %s)') % (name_cls[0], modname)
         elif self.objtype == 'exception':
             return name_cls[0]
         else:
@@ -508,6 +521,7 @@ class PhpDomain(Domain):
         'exception': ObjType(l_('exception'), 'exc', 'obj'),
         'namespace': ObjType(l_('namespace'), 'ns', 'obj'),
         'interface': ObjType(l_('interface'), 'interface', 'obj'),
+        'trait': ObjType(l_('trait'), 'trait', 'obj'),
     }
 
     directives = {
@@ -519,8 +533,9 @@ class PhpDomain(Domain):
         'staticmethod': PhpClassmember,
         'attr': PhpClassmember,
         'exception': PhpClasslike,
-        'namespace': PhpNamespace,
         'interface': PhpClasslike,
+        'trait': PhpClasslike,
+        'namespace': PhpNamespace,
     }
 
     roles = {
@@ -534,6 +549,7 @@ class PhpDomain(Domain):
         'ns': PhpXRefRole(),
         'obj': PhpXRefRole(),
         'interface': PhpXRefRole(),
+        'trait': PhpXRefRole(),
     }
 
     initial_data = {
