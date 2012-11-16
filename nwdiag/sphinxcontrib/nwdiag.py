@@ -31,6 +31,9 @@ from nwdiag_sphinxhelper import collections, FontMap
 from nwdiag_sphinxhelper import nwdiag, NwdiagDirective
 namedtuple = collections.namedtuple
 
+import blockdiag_sphinxhelper
+detectfont = blockdiag_sphinxhelper.command.detectfont
+
 
 class NwdiagError(SphinxError):
     category = 'Nwdiag error'
@@ -108,7 +111,7 @@ def get_fontmap(self):
 
         if fontpath:
             config = namedtuple('Config', 'font')(fontpath)
-            _fontpath = command.detectfont(config)
+            _fontpath = detectfont(config)
             fontmap.set_default_font(_fontpath)
     except:
         attrname = '_nwdiag_fontpath_warned'

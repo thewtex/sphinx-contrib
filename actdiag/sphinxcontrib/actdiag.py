@@ -32,6 +32,9 @@ from actdiag_sphinxhelper import collections, FontMap
 from actdiag_sphinxhelper import actdiag, ActdiagDirective
 namedtuple = collections.namedtuple
 
+import blockdiag_sphinxhelper
+detectfont = blockdiag_sphinxhelper.command.detectfont
+
 
 class ActdiagError(SphinxError):
     category = 'Actdiag error'
@@ -109,7 +112,7 @@ def get_fontmap(self):
 
         if fontpath:
             config = namedtuple('Config', 'font')(fontpath)
-            _fontpath = command.detectfont(config)
+            _fontpath = detectfont(config)
             fontmap.set_default_font(_fontpath)
     except:
         attrname = '_actdiag_fontpath_warned'

@@ -31,6 +31,9 @@ from seqdiag_sphinxhelper import collections, FontMap
 from seqdiag_sphinxhelper import seqdiag, SeqdiagDirective
 namedtuple = collections.namedtuple
 
+import blockdiag_sphinxhelper
+detectfont = blockdiag_sphinxhelper.command.detectfont
+
 
 class SeqdiagError(SphinxError):
     category = 'Seqdiag error'
@@ -108,7 +111,7 @@ def get_fontmap(self):
 
         if fontpath:
             config = namedtuple('Config', 'font')(fontpath)
-            _fontpath = command.detectfont(config)
+            _fontpath = detectfont(config)
             fontmap.set_default_font(_fontpath)
     except:
         attrname = '_seqdiag_fontpath_warned'

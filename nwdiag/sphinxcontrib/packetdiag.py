@@ -31,6 +31,9 @@ from packetdiag_sphinxhelper import collections, FontMap
 from packetdiag_sphinxhelper import packetdiag, PacketdiagDirective
 namedtuple = collections.namedtuple
 
+import blockdiag_sphinxhelper
+detectfont = blockdiag_sphinxhelper.command.detectfont
+
 
 class PacketdiagError(SphinxError):
     category = 'Packetdiag error'
@@ -108,7 +111,7 @@ def get_fontmap(self):
 
         if fontpath:
             config = namedtuple('Config', 'font')(fontpath)
-            _fontpath = command.detectfont(config)
+            _fontpath = detectfont(config)
             fontmap.set_default_font(_fontpath)
     except:
         attrname = '_packetdiag_fontpath_warned'
