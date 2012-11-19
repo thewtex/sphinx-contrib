@@ -51,6 +51,7 @@ setup(
         'License :: OSI Approved :: BSD License',
         'Operating System :: OS Independent',
         'Programming Language :: Python',
+        'Framework :: Zope3',
         'Topic :: Documentation',
         'Topic :: Utilities',
     ],
