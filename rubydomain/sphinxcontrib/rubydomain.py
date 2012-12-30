@@ -43,6 +43,12 @@ separators = {
 rb_separator = re.compile(r"(?:\w+)?(?:::)?(?:\.)?(?:#)?")
 
 
+def _iteritems(d):
+
+    for k in d:
+        yield k, d[k]
+
+
 def ruby_rsplit(fullname):
     items = [item for item in rb_separator.findall(fullname)]
     return ''.join(items[:-2]), items[-1]
@@ -477,7 +483,7 @@ class RubyModuleIndex(Index):
         ignores = self.domain.env.config['modindex_common_prefix']
         ignores = sorted(ignores, key=len, reverse=True)
         # list of all modules, sorted by module name
-        modules = sorted(self.domain.data['modules'].iteritems(),
+        modules = sorted(_iteritems(self.domain.data['modules']),
                          key=lambda x: x[0].lower())
         # sort out collapsable modules
         prev_modname = ''
@@ -526,7 +532,7 @@ class RubyModuleIndex(Index):
         collapse = len(modules) - num_toplevels < num_toplevels
 
         # sort by first letter
-        content = sorted(content.iteritems())
+        content = sorted(_iteritems(content))
 
         return content, collapse
 
@@ -584,10 +590,10 @@ class RubyDomain(Domain):
     ]
 
     def clear_doc(self, docname):
-        for fullname, (fn, _) in self.data['objects'].items():
+        for fullname, (fn, _) in list(self.data['objects'].items()):
             if fn == docname:
                 del self.data['objects'][fullname]
-        for modname, (fn, _, _, _) in self.data['modules'].items():
+        for modname, (fn, _, _, _) in list(self.data['modules'].items()):
             if fn == docname:
                 del self.data['modules'][modname]
 
@@ -679,9 +685,9 @@ class RubyDomain(Domain):
                                     contnode, name)
 
     def get_objects(self):
-        for modname, info in self.data['modules'].iteritems():
+        for modname, info in _iteritems(self.data['modules']):
             yield (modname, modname, 'module', info[0], 'module-' + modname, 0)
-        for refname, (docname, type) in self.data['objects'].iteritems():
+        for refname, (docname, type) in _iteritems(self.data['objects']):
             yield (refname, refname, type, docname, refname, 1)
 
 
