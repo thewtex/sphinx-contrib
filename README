@@ -79,6 +79,7 @@ List of extensions
 - youtube: embed videos from YouTube_
 - zopeext: provide an ``autointerface`` directive for using `Zope interfaces`_.
 - clearquest: create tables from ClearQuest_ queries.
+- tikz: draw pictures with the `TikZ/PGF LaTeX package`_.
 
 .. _aafigure: https://launchpad.net/aafigure
 
@@ -127,6 +128,8 @@ List of extensions
 .. _Zope interfaces: http://docs.zope.org/zope.interface/README.html
 
 .. _slideshare: http://www.slideshare.net/
+
+.. _TikZ/PGF LaTeX package: http://sourceforge.net/projects/pgf/
 
 For contributors
 ================
