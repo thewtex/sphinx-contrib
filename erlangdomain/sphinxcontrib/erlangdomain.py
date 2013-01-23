@@ -53,6 +53,12 @@ erl_record_sig_re = re.compile(
 erl_paramlist_re = re.compile(r'([\[\],])')  # split at '[', ']' and ','
 
 
+def _iteritems(d):
+
+    for k in d:
+        yield k, d[k]
+
+
 class ErlangObject(ObjectDescription):
     """
     Description of a Erlang language object.
@@ -310,7 +316,7 @@ class ErlangModuleIndex(Index):
         ignores = self.domain.env.config['modindex_common_prefix']
         ignores = sorted(ignores, key=len, reverse=True)
         # list of all modules, sorted by module name
-        modules = sorted(self.domain.data['modules'].iteritems(),
+        modules = sorted(_iteritems(self.domain.data['modules']),
                          key=lambda x: x[0].lower())
         # sort out collapsable modules
         prev_modname = ''
@@ -359,7 +365,7 @@ class ErlangModuleIndex(Index):
         collapse = len(modules) - num_toplevels < num_toplevels
 
         # sort by first letter
-        content = sorted(content.iteritems())
+        content = sorted(_iteritems(content))
 
         return content, collapse
 
@@ -465,7 +471,7 @@ class ErlangDomain(Domain):
                                     contnode, name)
 
     def get_objects(self):
-        for refname, (docname, type) in self.data['objects'].iteritems():
+        for refname, (docname, type) in _iteritems(self.data['objects']):
             yield (refname, refname, type, docname, refname, 1)
 
 
